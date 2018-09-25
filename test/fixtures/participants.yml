@@ -1,0 +1,19 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  opponent: one
+  owner: one
+  game: one
+  winner: one
+  waiting_for_user: one
+  status: MyString
+  game_data: MyText
+
+two:
+  opponent: two
+  owner: two
+  game: two
+  winner: two
+  waiting_for_user: two
+  status: MyString
+  game_data: MyText
