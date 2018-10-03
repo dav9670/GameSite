@@ -1,4 +1,4 @@
 class Relationship < ApplicationRecord
-  belongs_to :user, foreign_key: "user_id"
-  belongs_to :user, foreign_key: "friend_id"
+  belongs_to :user, class_name: "User"
+  belongs_to :friend, class_name: "User"
 end
