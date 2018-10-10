@@ -10,18 +10,21 @@
   </head>
 
   <body>
-    <h2 style="display: inline">BlueBox.io</h2>
-    <div class="user_links">
-      <%if(user_signed_in?)%>
-        Connected as <%= current_user.email %>
-        <%= link_to("edit account", edit_user_registration_path) %>
-        <%= link_to("log out", destroy_user_session_path, method: :delete) %>
-      <%else%>
-        <%= link_to "log in", new_user_session_path %>
-      <%end%>
-    </div>
-    <hr />
+      <h2 style="display: inline-block">BlueBox.io</h2>
+      <div class="dropdown">
+        <button class="dropbtn">Settings</button>
+        <div class="dropdown-content">
+          <%if(user_signed_in?)%>
+            <!--Connected as <%= current_user.email %>-->
+            <%= link_to("edit account", edit_user_registration_path) %>
+            <%= link_to("log out", destroy_user_session_path, method: :delete) %>
+          <%else%>
+            <%= link_to("log in", new_user_session_path)%>
+          <%end%>
+        </div>
+      </div>
 
+    <hr />
     <%= yield %>
   </body>
 </html>
