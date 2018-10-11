@@ -10,12 +10,13 @@
   </head>
 
   <body>
-      <h2 style="display: inline-block">BlueBox.io</h2>
+      <a href="/" class="title"><h2>BlueBox.io</h2></a>
       <div class="dropdown">
         <button class="dropbtn">Settings</button>
         <div class="dropdown-content">
           <%if(user_signed_in?)%>
             <!--Connected as <%= current_user.email %>-->
+            <%= link_to("statistics", show_user_statistics_path(current_user)) %>
             <%= link_to("edit account", edit_user_registration_path) %>
             <%= link_to("log out", destroy_user_session_path, method: :delete) %>
           <%else%>

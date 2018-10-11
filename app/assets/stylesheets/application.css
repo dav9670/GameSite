@@ -14,12 +14,8 @@
  *= require_self
  */
  
-h2{
-    display: inline;
-}
-
-.wrapper{
-    display: flex;
+.title{
+    display: inline-block;
 }
 
 .dropbtn {
