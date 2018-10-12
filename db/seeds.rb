@@ -15,6 +15,7 @@ Game.create!(:name => '8 ball pool')
 
 User.create!(:firstname => 'John', :lastname => 'Doe', :email => 'john@gmail.com', :password => 'topsecret')
 User.create!(:firstname => 'Dav', :lastname => 'Laf', :email => 'dav@gmail.com', :password => 'topsecret')
+User.create!(:firstname => 'Ben', :lastname => 'Gerrito', :email => 'ben@gmail.com', :password => 'topsecret')
 
 Relationship.create!(:user => User.all[0], :friend => User.all[1], :status => "accepted")
 

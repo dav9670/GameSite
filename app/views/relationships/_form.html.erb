@@ -16,9 +16,13 @@
     <%= form.text_field :user_id %>
   </div>-->
 
-  <div class="field">
+  <!--<div class="field">
     <%= form.label :friend_id %>
     <%= form.text_field :friend_id %>
+  </div>-->
+
+  <div class="field">
+    <%= form.collection_select :friend_id, User.all - [current_user], :id, :email, prompt: true %>
   </div>
 
   <!--<div class="field">
