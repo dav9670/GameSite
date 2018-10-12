@@ -14,20 +14,23 @@
 
   <tbody>
     <% current_user.friends.each do |relationship| %>
-      <tr>
-        <% if relationship.user != current_user %>
-          <td><%= relationship.user %></td>
-        <% else %>
-          <td><%= relationship.friend %></td>
-        <% end %>
-        <td><%= relationship.status %></td>
-        <% if relationship.user != current_user && relationship.status == "waiting" %>
-          <td><%= link_to 'Accept', update_relationship_path(relationship, :relationship => {:friend_id => relationship.friend, :user_id => relationship.user, :status => "accepted"}), method: :PUT, data: { confirm: 'Are you sure?' } %></td>
-          <td><%= link_to 'Deny', update_relationship_path(relationship, :relationship => {:friend_id => relationship.friend, :user_id => relationship.user, :status => "rejected"}), method: :PUT, data: { confirm: 'Are you sure?' } %></td>
-        <% else %>
-          <td><%= link_to 'Remove', destroy_relationship_path(relationship), method: :delete, data: { confirm: 'Are you sure?' } %></td>
-        <% end %>
-      </tr>
+      <%if relationship.status != "rejected" || relationship.user == current_user %>
+        <tr>
+          <% if relationship.user != current_user %>
+            <td><%= relationship.user %></td>
+          <% else %>
+            <td><%= relationship.friend %></td>
+          <% end %>
+          <td><%= relationship.status %></td>
+
+          <% if relationship.user != current_user && relationship.status == "waiting" %>
+            <td><%= link_to 'Accept', update_relationship_path(relationship, :relationship => {:friend_id => relationship.friend, :user_id => relationship.user, :status => "accepted"}), method: :PUT, data: { confirm: 'Are you sure?' } %></td>
+            <td><%= link_to 'Deny', update_relationship_path(relationship, :relationship => {:friend_id => relationship.friend, :user_id => relationship.user, :status => "rejected"}), method: :PUT, data: { confirm: 'Are you sure?' } %></td>
+          <% else %>
+            <td><%= link_to 'Remove', destroy_relationship_path(relationship), method: :delete, data: { confirm: 'Are you sure?' } %></td>
+          <% end %>
+        </tr>
+      <% end %>
     <% end %>
   </tbody>
 </table>
