@@ -3,10 +3,16 @@ class User < ApplicationRecord
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
-  has_many :relationships
-  has_many :hosted_games, :class_name => 'Participant', :foreign_key => "owner" 
-  has_many :joined_games, :class_name => 'Participant', :foreign_key => "opponent"
   
+  has_many :user_relationships, :class_name => 'Relationship', :foreign_key => 'user'
+  has_many :friend_relationships, :class_name => 'Relationship', :foreign_key => 'friend'
+  has_many :hosted_games, :class_name => 'Participant', :foreign_key => 'owner' 
+  has_many :joined_games, :class_name => 'Participant', :foreign_key => 'opponent'
+  
+  def to_s
+    email
+  end
+
   def participated_games
     hosted_games.or(joined_games)
   end
@@ -29,5 +35,9 @@ class User < ApplicationRecord
 
   def total_losses
     participated_games.where(["winner_id != ?", id]).count
+  end
+
+  def friends
+    user_relationships.or(friend_relationships)
   end
 end

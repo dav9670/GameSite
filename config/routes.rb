@@ -5,7 +5,13 @@ Rails.application.routes.draw do
   resources :games
   resources :participants
   
-  get '/user/:id/statistics', to: 'statistics#show', as: 'show_user_statistics'
+  get '/users/relationships', to: 'relationships#index', as: 'relationships'
+  get '/users/relationships/new', to: 'relationships#new', as: 'new_relationship'
+  post '/users/relationships', to: 'relationships#create', as: 'create_relationship'
+  put '/users/relationships/:id', to: 'relationships#update', as: 'update_relationship'
+  delete '/users/relationships/:id', to: 'relationships#destroy', as: 'destroy_relationship'
+
+  get '/users/:id/statistics', to: 'statistics#show', as: 'show_statistics'
 
   root to: "games#index"
 end

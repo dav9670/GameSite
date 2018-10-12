@@ -15,8 +15,9 @@
         <button class="dropbtn">Settings</button>
         <div class="dropdown-content">
           <%if(user_signed_in?)%>
-            <!--Connected as <%= current_user.email %>-->
-            <%= link_to("statistics", show_user_statistics_path(current_user)) %>
+            <%= link_to("home", root_path) %>
+            <%= link_to("friends", relationships_path(current_user)) %>
+            <%= link_to("statistics", show_statistics_path(current_user)) %>
             <%= link_to("edit account", edit_user_registration_path) %>
             <%= link_to("log out", destroy_user_session_path, method: :delete) %>
           <%else%>
@@ -24,6 +25,9 @@
           <%end%>
         </div>
       </div>
+      <%if(user_signed_in?)%>
+        <span style="float: right; margin: 25px 30px 0px 0px;">Connected as <%= current_user.email %></span>
+      <%end%>
 
     <hr />
     <%= yield %>
