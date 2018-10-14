@@ -2,16 +2,32 @@
 Rails.application.routes.draw do
   devise_for :users
 
-  resources :games
-  resources :participants
+  authenticated :user do
+    root to: "games#index", as: :authenticated_root
   
-  get '/users/relationships', to: 'relationships#index', as: 'relationships'
-  get '/users/relationships/new', to: 'relationships#new', as: 'new_relationship'
-  post '/users/relationships', to: 'relationships#create', as: 'create_relationship'
-  put '/users/relationships/:id', to: 'relationships#update', as: 'update_relationship'
-  delete '/users/relationships/:id', to: 'relationships#destroy', as: 'destroy_relationship'
+    # Games
+    get '/games', to: 'games#index', as: 'games'
 
-  get '/users/:id/statistics', to: 'statistics#show', as: 'show_statistics'
+    # Participants
+    get '/games/:game_id/participants', to: 'participants#index', as: 'participants'
+    get '/games/:game_id/participants/:participant_id', to: 'participants#show', as: 'show_participant'
+    post '/games/:game_id/participants', to: 'participants#create', as: 'create_participant'
+    put '/games/:game_id/participants/:participant_id', to: 'participants#update', as: 'update_participant'
+    
+    # Relationships
+    get '/users/relationships', to: 'relationships#index', as: 'relationships'
+    get '/users/relationships/new', to: 'relationships#new', as: 'new_relationship'
+    post '/users/relationships', to: 'relationships#create', as: 'create_relationship'
+    put '/users/relationships/:id', to: 'relationships#update', as: 'update_relationship'
+    delete '/users/relationships/:id', to: 'relationships#destroy', as: 'destroy_relationship'
 
-  root to: "games#index"
+
+    # Statistics
+    get '/users/:id/statistics', to: 'statistics#show', as: 'show_statistics'
+
+  end
+  
+  
+  
+  root to: redirect('/users/sign_in')
 end

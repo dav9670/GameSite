@@ -14,6 +14,13 @@ class ParticipantsTest < ApplicationSystemTestCase
     visit participants_url
     click_on "New Participant"
 
+    fill_in "Game Data", with: @participant.game_data
+    fill_in "Game", with: @participant.game_id
+    fill_in "Opponent", with: @participant.opponent_id
+    fill_in "Owner", with: @participant.owner_id
+    fill_in "Status", with: @participant.status
+    fill_in "Waiting For User", with: @participant.waiting_for_user_id
+    fill_in "Winner", with: @participant.winner_id
     click_on "Create Participant"
 
     assert_text "Participant was successfully created"
@@ -24,6 +31,13 @@ class ParticipantsTest < ApplicationSystemTestCase
     visit participants_url
     click_on "Edit", match: :first
 
+    fill_in "Game Data", with: @participant.game_data
+    fill_in "Game", with: @participant.game_id
+    fill_in "Opponent", with: @participant.opponent_id
+    fill_in "Owner", with: @participant.owner_id
+    fill_in "Status", with: @participant.status
+    fill_in "Waiting For User", with: @participant.waiting_for_user_id
+    fill_in "Winner", with: @participant.winner_id
     click_on "Update Participant"
 
     assert_text "Participant was successfully updated"

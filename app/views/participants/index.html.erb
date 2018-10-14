@@ -1,25 +1,25 @@
 <p id="notice"><%= notice %></p>
 
-<h1>Participants</h1>
+<h1><%= @game %></h1>
+
+<br/>
+
+<h2>Participants</h2>
 
 <table>
   <thead>
     <tr>
-      <th colspan="3"></th>
+      <th>Owner</th>
+      <th></th>
     </tr>
   </thead>
 
   <tbody>
     <% @participants.each do |participant| %>
       <tr>
-        <td><%= link_to 'Show', participant %></td>
-        <td><%= link_to 'Edit', edit_participant_path(participant) %></td>
-        <td><%= link_to 'Destroy', participant, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+        <td><%= participant.owner %></td>
+        <td><%= link_to 'Join', update_participant_path(@game, participant, :participant => {:opponent_id => current_user, :owner_id => participant.owner_id, :game_id => participant.game_id, :winner_id => nil, :waiting_for_user_id => participant.owner, :status => "waiting", :game_data => nil}), method: :PUT, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
   </tbody>
 </table>
-
-<br>
-
-<%= link_to 'New Participant', new_participant_path %>

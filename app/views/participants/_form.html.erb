@@ -11,6 +11,41 @@
     </div>
   <% end %>
 
+  <div class="field">
+    <%= form.label :opponent_id %>
+    <%= form.text_field :opponent_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :owner_id %>
+    <%= form.text_field :owner_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :game_id %>
+    <%= form.text_field :game_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :winner_id %>
+    <%= form.text_field :winner_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :waiting_for_user_id %>
+    <%= form.text_field :waiting_for_user_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :status %>
+    <%= form.text_field :status %>
+  </div>
+
+  <div class="field">
+    <%= form.label :game_data %>
+    <%= form.text_area :game_data %>
+  </div>
+
   <div class="actions">
     <%= form.submit %>
   </div>

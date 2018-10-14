@@ -1,15 +1,18 @@
 class ParticipantsController < ApplicationController
-  before_action :set_participant, only: [:show, :edit, :update, :destroy]
+  before_action :set_participant, only: [:edit, :destroy]
 
   # GET /participants
   # GET /participants.json
   def index
-    @participants = Participant.all
+    @game = Game.find(params[:game_id])
+    @participants = @game.joinable_participants_for_user(current_user)
   end
 
   # GET /participants/1
   # GET /participants/1.json
   def show
+    @game = Game.find(params[:game_id])
+    @participant = Participant.find(params[:participant_id])
   end
 
   # GET /participants/new
@@ -24,11 +27,14 @@ class ParticipantsController < ApplicationController
   # POST /participants
   # POST /participants.json
   def create
+    @game = Game.find(params[:game_id])
     @participant = Participant.new(participant_params)
 
     respond_to do |format|
       if @participant.save
-        format.html { redirect_to @participant, notice: 'Participant was successfully created.' }
+        format.html { redirect_to show_participant_path(@game, @participant)
+          #, notice: 'Participant was successfully updated.' 
+        }
         format.json { render :show, status: :created, location: @participant }
       else
         format.html { render :new }
@@ -40,9 +46,13 @@ class ParticipantsController < ApplicationController
   # PATCH/PUT /participants/1
   # PATCH/PUT /participants/1.json
   def update
+    game = Game.find(params[:game_id])
+    participant = Participant.find(params[:participant_id])
     respond_to do |format|
-      if @participant.update(participant_params)
-        format.html { redirect_to @participant, notice: 'Participant was successfully updated.' }
+      if participant.update(participant_params)
+        format.html { redirect_to show_participant_path(game, participant)
+          #, notice: 'Participant was successfully updated.' 
+        }
         format.json { render :show, status: :ok, location: @participant }
       else
         format.html { render :edit }
@@ -69,6 +79,6 @@ class ParticipantsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def participant_params
-      params.fetch(:participant, {})
+      params.require(:participant).permit(:opponent_id, :owner_id, :game_id, :winner_id, :waiting_for_user_id, :status, :game_data)
     end
 end
