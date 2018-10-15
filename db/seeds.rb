@@ -7,7 +7,6 @@
 #   Character.create(name: 'Luke', movie: movies.first)
 
 Game.create!(:name => '2048')
-Game.create!(:name => 'Fortnite.exe')
 Game.create!(:name => 'Habbo')
 Game.create!(:name => 'Club penguin')
 Game.create!(:name => 'OSRS')

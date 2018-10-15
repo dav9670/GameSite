@@ -13,6 +13,14 @@ class User < ApplicationRecord
     email
   end
 
+  def is_ingame?
+    participated_games.where("status = \"waiting\" OR status = \"playing\"").count > 0
+  end
+
+  def current_participant
+    participated_games.where("status = \"waiting\" OR status = \"playing\"").first
+  end
+
   def participated_games
     hosted_games.or(joined_games)
   end

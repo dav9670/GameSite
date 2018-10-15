@@ -15,7 +15,7 @@
         <button class="dropbtn">Settings</button>
         <div class="dropdown-content">
           <%if(user_signed_in?)%>
-            <%= link_to("home", authenticated_root_path) %>
+            <%= link_to("home", root_path) %>
             <%= link_to("friends", relationships_path) %>
             <%= link_to("statistics", show_statistics_path(current_user)) %>
             <%= link_to("edit account", edit_user_registration_path) %>
