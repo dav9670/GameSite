@@ -13,6 +13,10 @@ class User < ApplicationRecord
     email
   end
 
+  def name
+    firstname + " " + lastname
+  end
+
   def is_ingame?
     participated_games.where("status = \"waiting\" OR status = \"playing\"").count > 0
   end

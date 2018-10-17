@@ -14,6 +14,12 @@ class RelationshipsController < ApplicationController
   # GET /relationships/new
   def new
     @relationship = Relationship.new
+    name = params[:name]
+    if(name != nil)
+      @users = User.where(["id != ? AND email LIKE \"%#{name}%\"", current_user.id])
+                    .where.not(id: current_user.user_relationships.select(:friend_id))
+                    .where.not(id: current_user.friend_relationships.select(:user_id))
+    end
   end
 
   # GET /relationships/1/edit
