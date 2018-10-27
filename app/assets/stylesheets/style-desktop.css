@@ -78,6 +78,11 @@
 			color: #323338;
 		}
 
+		#logo h1 a:hover
+		{
+			background-color: transparent;
+		}
+
 		#logo span
 		{
 			display: block;
