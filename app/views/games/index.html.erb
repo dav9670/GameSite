@@ -1,28 +1,19 @@
+
 <p id="notice"><%= notice %></p>
-
-<h1>Games</h1>
-
-<table>
-  <thead>
-    <tr>
-      <th colspan="3"></th>
-    </tr>
-  </thead>
-
-  <tbody>
-    <tr>
+  <header>
+    <h2>Just play a game</h2>
+  </header>
+  <div class="row">
     <% @games.each do |game| %>
-      <td>
-        <%= game.name %> <br />
-        <%= image_tag ("/assets/index.png") %> <br />
-        <%= button_to 'Host game', create_participant_path(game, :participant => {:opponent_id => nil, :owner_id => current_user, :game_id => game, :winner_id => nil, :waiting_for_user_id => current_user, :status => "waiting", :game_data => nil}), method: :POST, data: { confirm: 'Are you sure?' } %>
-        <% if game.joinable_participants_for_user(current_user).count > 0 %>
-          <%= button_to "Join game (#{game.joinable_participants_for_user(current_user).count})", participants_path(game), :method => :get %>
-        <% end %>
-      </td>
+      <div class="3u">
+        <section>
+          <%= game.name %> <br />
+          <%= image_tag "/assets/index.png", :class => "image full" %> <br />
+          <%= button_to 'Host game', create_participant_path(game, :participant => {:opponent_id => nil, :owner_id => current_user, :game_id => game, :winner_id => nil, :waiting_for_user_id => current_user, :status => "waiting", :game_data => nil}), method: :POST, data: { confirm: 'Are you sure?' }, :class => "button" %>
+          <% if game.joinable_participants_for_user(current_user).count > 0 %>
+            <%= button_to "Join game (#{game.joinable_participants_for_user(current_user).count})", participants_path(game), :method => :get, :class => "button" %>
+          <% end %>
+        </section>
+      </div>
     <% end %>
-    </tr>
-  </tbody>
-</table>
-
-<br>
+  </div>

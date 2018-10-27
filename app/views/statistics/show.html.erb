@@ -1,17 +1,19 @@
 <p id="notice"><%= notice %></p>
 
-<b><%= current_user.email %></b><br/><br/>
+<b><%= current_user.email %></b><br/>
 
 Total wins : <%= current_user.total_wins %><br/>
-Total losses : <%= current_user.total_losses %><br/>
+Total losses : <%= current_user.total_losses %><br/><br/>
 
-<h1>Games</h1>
+<h1>Games</h1><br/>
 
 <% current_user.participated_games.select(:game_id).distinct.each do |participant| %>
-    <%game_id = participant.game_id %>
-    <h3>Game : <%= Game.find(game_id).name %></h3>
+    <div style="padding-left:3em">
+        <%game_id = participant.game_id %>
+        <h3><%= Game.find(game_id).name %></h3>
 
-    Patricipations : <%= current_user.participants_for_game(game_id).count %><br/>
-    Wins : <%= current_user.winned_games(game_id).count %><br/>
-    Losses : <%= current_user.lost_games(game_id).count %><br/><br/>
+        Patricipations : <%= current_user.participants_for_game(game_id).count %><br/>
+        Wins : <%= current_user.winned_games(game_id).count %><br/>
+        Losses : <%= current_user.lost_games(game_id).count %><br/><br/>
+    </div>
 <% end %>

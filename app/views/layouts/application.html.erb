@@ -1,35 +1,82 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>GameSite</title>
+    <title>GreyBox.io</title>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
     <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="description" content="" />
+		<meta name="keywords" content="" />
+		<link href='http://fonts.googleapis.com/css?family=Oxygen:400,300,700' rel='stylesheet' type='text/css'>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<noscript>
+			<link rel="stylesheet" href="css/skel-noscript.css" />
+			<link rel="stylesheet" href="css/style.css" />
+		</noscript>
+
+
+
   </head>
 
   <body>
-      <a href="/" class="title"><h2>BlueBox.io</h2></a>
-      <div class="dropdown">
-        <button class="dropbtn">Settings</button>
-        <div class="dropdown-content">
-          <%if(user_signed_in?)%>
-            <%= link_to("home", root_path) %>
-            <%= link_to("friends", relationships_path) %>
-            <%= link_to("statistics", show_statistics_path(current_user)) %>
-            <%= link_to("edit account", edit_user_registration_path) %>
-            <%= link_to("log out", destroy_user_session_path, method: :delete) %>
-          <%else%>
-            <%= link_to("log in", new_user_session_path)%>
-          <%end%>
-        </div>
-      </div>
-      <%if(user_signed_in?)%>
-        <span style="float: right; margin: 25px 30px 0px 0px;">Connected as <%= current_user.email %></span>
-      <%end%>
+		<div id="header">
+			<div class="container">
+					
+          <div class="dropdown">
+            <button class="dropbtn">&#8801;</button>
+            <div class="dropdown-content">
+              <%if(user_signed_in?)%>
+                <%= link_to("home", root_path) %>
+                <%= link_to("friends", relationships_path) %>
+                <%= link_to("statistics", show_statistics_path(current_user)) %>
+                <%= link_to("edit account", edit_user_registration_path) %>
+                <%= link_to("log out", destroy_user_session_path, method: :delete) %>
+              <%else%>
+                <%= link_to("log in", new_user_session_path)%>
+              <%end%>
+            </div>
+          </div>
 
-    <hr />
-    <%= yield %>
+					<div id="logo">
+						<h1><a href="#">GreyBox.io</a></h1>
+						<span>Design by TEMPLATED</span>
+					</div>
+				
+          <%if(user_signed_in?)%>
+            <span style="float: right; margin: 25px 30px 0px 0px;">Connected as <%= current_user.email %></span>
+          <%end%>
+
+
+				<!-- Nav
+					<nav id="nav">
+						<ul>
+							<li class="active"><a href="index.html">Homepage</a></li>
+							<li><a href="threecolumn.html">Two Sidebars</a></li>
+							<li><a href="twocolumn1.html">Left Sidebar</a></li>
+							<li><a href="twocolumn2.html">Right Sidebar</a></li>
+							<li><a href="onecolumn.html">No Sidebar</a></li>
+						</ul>
+					</nav>
+				-->
+			</div>
+		</div>
+
+    <div id="main">
+      <div class="container">
+        <%= yield %>
+      </div>
+    </div>
+
+    <!-- Copyright -->
+    <div id="copyright">
+      <div class="container">
+        Design: <a href="http://templated.co">TEMPLATED</a> Images: <a href="http://unsplash.com">Unsplash</a> (<a href="http://unsplash.com/cc0">CC0</a>)
+      </div>
+    </div>
+
   </body>
 </html>

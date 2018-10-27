@@ -14,12 +14,8 @@
  *= require_self
  */
  
-.title{
-    display: inline-block;
-}
-
 .dropbtn {
-    background-color: #4CAF50;
+    background-color: rgb(114, 114, 114);
     color: white;
     padding: 16px;
     font-size: 16px;
@@ -29,7 +25,6 @@
 
 .dropdown {
     position: relative;
-    /*display: inline-block;*/
     float: right;
 }
 
@@ -56,5 +51,5 @@
 }
 
 .dropdown:hover .dropbtn {
-    background-color: #3e8e41;
+    background-color: rgb(89, 90, 89);
 }
