@@ -1,5 +1,5 @@
 class ParticipantsController < ApplicationController
-  before_action :set_participant, only: [:edit, :destroy]
+  before_action :set_participant, only: [:destroy]
 
   # GET /participants
   # GET /participants.json
@@ -13,15 +13,6 @@ class ParticipantsController < ApplicationController
   def show
     @game = Game.find(params[:game_id])
     @participant = Participant.find(params[:participant_id])
-  end
-
-  # GET /participants/new
-  def new
-    @participant = Participant.new
-  end
-
-  # GET /participants/1/edit
-  def edit
   end
 
   # POST /participants

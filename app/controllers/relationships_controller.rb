@@ -1,14 +1,10 @@
 class RelationshipsController < ApplicationController
-  before_action :set_relationship, only: [:show, :edit, :update, :destroy]
+  before_action :set_relationship, only: [:update, :destroy]
 
   # GET /relationships
   # GET /relationships.json
   def index
-  end
-
-  # GET /relationships/1
-  # GET /relationships/1.json
-  def show
+    @relationships = current_user.friends
   end
 
   # GET /relationships/new
@@ -16,14 +12,10 @@ class RelationshipsController < ApplicationController
     @relationship = Relationship.new
     name = params[:name]
     if(name != nil)
-      @users = User.where(["id != ? AND email LIKE \"%#{name}%\"", current_user.id])
+      @users = User.where("id != #{current_user.id} AND email LIKE \"%#{name}%\"")
                     .where.not(id: current_user.user_relationships.select(:friend_id))
                     .where.not(id: current_user.friend_relationships.select(:user_id))
     end
-  end
-
-  # GET /relationships/1/edit
-  def edit
   end
 
   # POST /relationships

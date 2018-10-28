@@ -13,7 +13,7 @@
   </thead>
 
   <tbody>
-    <% current_user.friends.each do |relationship| %>
+    <% @relationships.each do |relationship| %>
       <%if relationship.status != "rejected" || relationship.user != current_user %>
         <tr>
           <% if relationship.user != current_user %>
