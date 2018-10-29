@@ -23,13 +23,9 @@ class ParticipantsController < ApplicationController
 
     respond_to do |format|
       if @participant.save
-        format.html { redirect_to show_participant_path(@game, @participant)
-          #, notice: 'Participant was successfully updated.' 
-        }
-        format.json { render :show, status: :created, location: @participant }
+        format.html { redirect_to show_participant_path(@game, @participant) }
       else
         format.html { render :new }
-        format.json { render json: @participant.errors, status: :unprocessable_entity }
       end
     end
   end
@@ -41,13 +37,9 @@ class ParticipantsController < ApplicationController
     participant = Participant.find(params[:participant_id])
     respond_to do |format|
       if participant.update(participant_params)
-        format.html { redirect_to show_participant_path(game, participant)
-          #, notice: 'Participant was successfully updated.' 
-        }
-        format.json { render :show, status: :ok, location: @participant }
+        format.html { redirect_to show_participant_path(game, participant) }
       else
         format.html { render :edit }
-        format.json { render json: @participant.errors, status: :unprocessable_entity }
       end
     end
   end
@@ -58,7 +50,6 @@ class ParticipantsController < ApplicationController
     @participant.destroy
     respond_to do |format|
       format.html { redirect_to root_path, notice: 'Participant was successfully destroyed.' }
-      format.json { head :no_content }
     end
   end
 

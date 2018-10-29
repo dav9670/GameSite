@@ -61,7 +61,7 @@
 		.\-6u { margin-left: 50% }
 		.\-5u { margin-left: 41.6666666667% }
 		.\-4u { margin-left: 33.3333333333% }
-		.\-3u { margin-left: 25% }
+		.\-3u { margin-left: 25%; margin-top: 2em; }
 		.\-2u { margin-left: 16.6666666667% }
 		.\-1u { margin-left: 8.3333333333% }
 
@@ -97,7 +97,7 @@
 		}
 
 		.row > * {
-			padding-top: 0;
+			padding-top: 50px;
 		}
 
 		/* Modifiers */
