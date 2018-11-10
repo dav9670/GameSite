@@ -8,9 +8,9 @@
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome",
-            "url": "http://192.168.0.10:3000/games/1/participants/11",
-            "webRoot": "${workspaceFolder}",
-            "breakOnLoad": true,
+            "url": "http://192.168.0.10:3000",
+            "sourceMaps": true,
+            "webRoot": "${workspaceRoot}\\app\\assets\\",
             "trace": "verbose"
         }
     ]

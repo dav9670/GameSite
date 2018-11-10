@@ -6,6 +6,6 @@
 
 <h3>Host : <%= @participant.owner %>, Opponent : <%= @participant.opponent %></h3>
 
-<canvas id="game_canvas" width="1200" height="700" style="border-style: solid; border-width: 2px;"></canvas>
+<canvas id="game_canvas" width="1200" height="600" style="border-style: solid; border-width: 2px;"></canvas>
 
 <%= link_to 'Quit game', destroy_participant_path(@participant), method: :delete, data: { confirm: 'Are you sure?' } %><br/>
