@@ -144,6 +144,18 @@ class Board {
         }
     }
 
+    isInside(x, y){
+        return  x > this.drawOffestX && x < this.drawOffestX + this.drawLength &&
+                y > this.drawOffsetY && y < this.drawOffsetY + this.drawLength;
+    }
+
+    indexOf(x, y){
+        if(this.isInside(x, y)){
+            return { indexX : Math.floor((x - this.drawOffestX) / (this.drawLength / this.nbSquares)), indexY : Math.floor((y - this.drawOffsetY) / (this.drawLength / this.nbSquares))};
+        }
+        return null;
+    }
+
     draw (context) {
         context.clearRect(this.drawOffestX, this.drawOffsetY, this.drawLength, this.drawLength);
         for (let y = 0; y < this.grid.length; y++) {
@@ -175,7 +187,12 @@ $(document).ready(function () {
     opponentBoard.draw(context);
 
     canvas.addEventListener('mousedown', function (event) {
-
+        let rect = canvas.getBoundingClientRect();
+        let x = event.clientX - rect.left;
+        let y = event.clientY - rect.top;
+        
+        console.log("currentBoard : " + currentBoard.indexOf(x,y));
+        console.log("opponentBoard : " + opponentBoard.indexOf(x,y));
     });
 });
 
@@ -212,5 +229,3 @@ $(document).keypress(function (evt) {
     
 });
 
-/* function doMouseDown (event) {
-} */
