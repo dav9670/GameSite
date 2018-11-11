@@ -2,12 +2,21 @@
 // All this logic will automatically be available in application.js.
 // You can use CoffeeScript in this file: http://coffeescript.org/
 
+let canvas;
+let context;
+
+let currentBoard;
+let opponentBoard;
+
+let gameFinished = false;
+
 class Square {
-    constructor (value, color, x, y) {
+    constructor (value, color, drawLength, drawOffsetX, drawOffsetY) {
         this.value = value;
         this.color = color;
-        this.x = x;
-        this.y = y;
+        this.drawLength = drawLength;
+        this.drawOffsetX = drawOffsetX;
+        this.drawOffsetY = drawOffsetY;
     }
     
     isEmpty(){
@@ -20,19 +29,40 @@ class Square {
             this.value = 0;
         }
     }
+
+    draw(context){
+        if(!this.isEmpty()){
+            context.clearRect(this.drawOffestX, this.drawOffsetY, this.drawLength, this.drawLength);
+    
+            context.beginPath();
+            context.rect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
+            context.fillStyle = this.color;
+            context.fill();
+            context.stroke();
+    
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.font = '20px Arial';
+            context.fillStyle = 'black';
+            context.fillText(this.isEmpty() ? "" : this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
+        }
+    }
 }
 
 class Board {
-    constructor (length, offestX, offsetY) {
-        this.length = length;
-        this.offestX = offestX;
-        this.offsetY = offsetY;
+    constructor (drawLength, drawOffestX, drawOffsetY) {
+        this.drawLength = drawLength;
+        this.drawOffestX = drawOffestX;
+        this.drawOffsetY = drawOffsetY;
         this.nbSquares = 4;
         this.grid = [];
         for (let y = 0; y < this.nbSquares; y++) {
             let column = [];
             for (let x = 0; x < this.nbSquares; x++) {
-                column[x] = new Square(2, 'white', x, y);
+                let sLength = this.drawLength / this.nbSquares;
+                let startX = x * sLength + this.drawOffestX;
+                let startY = y * sLength + this.drawOffsetY;
+                column[x] = new Square(0, 'white', sLength - 16, startX + 8, startY + 8);
             }
             this.grid[y] = column;
         }
@@ -88,35 +118,49 @@ class Board {
         }
     }
 
+    spawnSquares(nbNewSquares = Math.round(Math.random()) + 1){
+        let indexes = [];
+        for(let i=0; i<this.nbSquares * this.nbSquares; i++){
+            indexes.push(i);
+        }
+        for (var i = indexes.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = indexes[i];
+            indexes[i] = indexes[j];
+            indexes[j] = temp;
+        }
+
+        for(let i=0; i<this.nbSquares * this.nbSquares && nbNewSquares > 0; i++){
+            let index = indexes.pop(i);
+            let square = this.grid[Math.floor(index / this.nbSquares)][index % this.nbSquares];
+            if(square.isEmpty()){
+                square.value = Math.pow(2, Math.round(Math.random() + 1));;
+                nbNewSquares--;
+            }
+        }
+
+        if(nbNewSquares > 0){
+            gameFinished = true;
+        }
+    }
+
     draw (context) {
-        context.clearRect(this.offestX, this.offsetY, this.length, this.length);
-        for (let i = 0; i < this.grid.length; i++) {
-            for (let x = 0; x < this.grid[i].length; x++) {
-                let sLength = this.length / this.nbSquares;
-                let startX = x * sLength + this.offestX;
-                let startY = i * sLength + this.offsetY;
+        context.clearRect(this.drawOffestX, this.drawOffsetY, this.drawLength, this.drawLength);
+        for (let y = 0; y < this.grid.length; y++) {
+            for (let x = 0; x < this.grid[y].length; x++) {
+                let sLength = this.drawLength / this.nbSquares;
+                let startX = x * sLength + this.drawOffestX;
+                let startY = y * sLength + this.drawOffsetY;
 
                 context.beginPath();
                 context.rect(startX, startY, sLength, sLength);
-                context.fillStyle = this.grid[i][x].color;
-                context.fill();
                 context.stroke();
 
-                context.textAlign = 'center';
-                context.textBaseline = 'middle';
-                context.font = '20px Arial';
-                context.fillStyle = 'black';
-                context.fillText(this.grid[i][x].isEmpty() ? "" : this.grid[i][x].value, startX + (sLength / 2), startY + (sLength / 2), sLength);
+                this.grid[y][x].draw(context);
             }
         }
     }
 }
-
-let canvas;
-let context;
-
-let currentBoard;
-let opponentBoard;
 
 $(document).ready(function () {
     canvas = document.getElementById('game_canvas');
@@ -124,6 +168,8 @@ $(document).ready(function () {
 
     currentBoard = new Board(canvas.offsetWidth / 3, canvas.offsetWidth / 15, canvas.offsetHeight / 15 * 14 - (canvas.offsetWidth / 3));
     opponentBoard = new Board(canvas.offsetWidth / 3, canvas.offsetWidth / 15 * 14 - (canvas.offsetWidth / 3), canvas.offsetHeight / 15 * 14 - (canvas.offsetWidth / 3));
+
+    currentBoard.spawnSquares(2);
 
     currentBoard.draw(context);
     opponentBoard.draw(context);
@@ -134,29 +180,36 @@ $(document).ready(function () {
 });
 
 $(document).keypress(function (evt) {
-    let move = 0;
-    let dir = "";
-    switch(evt.key){
-        case "s" :
-            move = 1;
-            dir = "vertical";
-        break;
-        case "w" :
-            move = -1;
-            dir = "vertical";
-        break;
-        case "d" :
-            move = 1;
-            dir = "horizontal";
-        break;
-        case "a" :
-            move = -1;
-            dir = "horizontal";
-        break;
+    if(gameFinished == false) {
+        let move = 0;
+        let dir = "";
+        switch(evt.key){
+            case "s" :
+                move = 1;
+                dir = "vertical";
+            break;
+            case "w" :
+                move = -1;
+                dir = "vertical";
+            break;
+            case "d" :
+                move = 1;
+                dir = "horizontal";
+            break;
+            case "a" :
+                move = -1;
+                dir = "horizontal";
+            break;
+        }
+        
+        currentBoard.moveSquares(move, dir);
+        currentBoard.spawnSquares();
+        currentBoard.draw(context);
+    } 
+    if(gameFinished == true){
+        alert("You lost the game!");
     }
     
-    currentBoard.moveSquares(move, dir);
-    currentBoard.draw(context);
 });
 
 /* function doMouseDown (event) {
