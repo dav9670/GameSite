@@ -32,9 +32,59 @@ class Board {
         for (let y = 0; y < this.nbSquares; y++) {
             let column = [];
             for (let x = 0; x < this.nbSquares; x++) {
-                column[x] = new Square(2, 'green', x, y);
+                column[x] = new Square(2, 'white', x, y);
             }
             this.grid[y] = column;
+        }
+    }
+
+    moveSquares (move, dir) {
+        for(let i = 0; i < this.nbSquares; i++){
+            let line = [];
+            if(dir == "horizontal"){
+                if(move == 1){
+                    line = this.grid[i].slice().reverse();
+                } else if(move == -1){
+                    line = this.grid[i];
+                }
+            } else if (dir == "vertical"){
+                let verticalLine = [];
+                for(let x = 0; x<this.nbSquares; x++){
+                    verticalLine.push(this.grid[x][i]);
+                }
+
+                if(move == 1){
+                    line = verticalLine.reverse();
+                } else if(move == -1){
+                    line = verticalLine;
+                }
+            }
+
+            for(let x = 0; x<this.nbSquares; x++){
+                let currentSquare = line[x];
+                
+                //From currentSquare, scan to the end of the line until hits another non-empty square
+                if(!currentSquare.isEmpty()){
+                    //Loops until hit boundary or targetSquare is not empty, if hit boundary, just move square to boundary
+                    let targetSquare;
+                    for(let rest = x - 1; rest >= 0; rest--){
+                        targetSquare = line[rest];
+
+                        if(!targetSquare.isEmpty()){
+                            //if currentValue and neighborValue are the same, move square to neighbor, else move to the square before neighbor
+                            if(targetSquare.value != currentSquare.value){
+                                targetSquare = line[rest + 1];
+                            }
+                            break;
+                        }
+                    }
+
+                    //Check for moving into itself is handled inside moveTo
+                    //Undefined if border square, because no neighbor after it
+                    if(targetSquare != undefined)
+                        currentSquare.moveTo(targetSquare);
+                }
+            }
         }
     }
 
@@ -57,78 +107,6 @@ class Board {
                 context.font = '20px Arial';
                 context.fillStyle = 'black';
                 context.fillText(this.grid[i][x].isEmpty() ? "" : this.grid[i][x].value, startX + (sLength / 2), startY + (sLength / 2), sLength);
-            }
-        }
-    }
-
-    moveSquares (move, dir) {
-
-        //Make one loop for all 4 directions possible
-
-        let firstStart = 0;
-        let firstBoundary = 0;
-        let seccondStart = 0;
-        let secondBoundary = 0;
-        let restBoundary = 0;
-
-        let adder = move < 0 ? 1 : -1;
-
-        //Start loop on the side of move (ex : move right (move == 1, dir == "horizontal") then firstStart = grid[0].length, and boundary = 0)
-
-        if(dir == "horizontal"){
-            firstStart = 0;
-            firstBoundary = this.grid.length;
-            seccondStart = adder > 0 ? 0 : this.grid[0].length - 1;
-            secondBoundary = adder > 0 ? this.grid[0].length : -1;
-            restBoundary = adder > 0 ? -1 : this.grid[0].length;
-        } else if (dir == "vertical"){
-            firstStart = 0;
-            firstBoundary = this.grid[0].length;
-            seccondStart = adder > 0 ? 0 : this.grid.length - 1;
-            secondBoundary = adder > 0 ? this.grid.length : -1;
-            restBoundary = adder > 0 ? -1 : this.grid.length;
-        }
-
-
-        for(let first = firstStart; first != firstBoundary; first++){
-            for(let second = seccondStart; second != secondBoundary; second += adder){
-                let currentSquare;
-                if(dir == "horizontal"){
-                    currentSquare = this.grid[first][second];
-                } else if (dir == "vertical"){
-                    currentSquare = this.grid[second][first];
-                }
-                
-                //From currentSquare, scan to the end of the line until hits another non-empty square
-                if(!currentSquare.isEmpty()){
-                    //Loops until hit boundary or targetSquare is not empty, if hit boundary, just move square to boundary
-                    let targetSquare;
-                    let rest;
-                    for(rest = second - adder; rest != restBoundary; rest -= adder){
-                        if(dir == "horizontal"){
-                            targetSquare = this.grid[first][rest];
-                        } else if (dir == "vertical"){
-                            targetSquare = this.grid[rest][first];
-                        }
-
-                        if(!targetSquare.isEmpty()){
-                            //if currentValue and neighborValue are the same, move square to neighbor, else move to the square before neighbor
-                            if(targetSquare.value != currentSquare.value){
-                                if(dir == "horizontal"){
-                                    targetSquare = this.grid[first][rest + adder];
-                                } else if (dir == "vertical"){
-                                    targetSquare = this.grid[rest + adder][first];
-                                }  
-                            }
-                            break;
-                        }
-                    }
-
-                    //Check for moving into itself is handled inside moveTo
-                    //Undefined if border square
-                    if(targetSquare != undefined)
-                        currentSquare.moveTo(targetSquare);
-                }
             }
         }
     }
