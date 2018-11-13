@@ -2,10 +2,7 @@
 // All this logic will automatically be available in application.js.
 // You can use CoffeeScript in this file: http://coffeescript.org/
 
-//var tinycolor = require("tinycolor2");
-
 let canvas;
-let context;
 
 let currentBoard;
 let opponentBoard;
@@ -88,7 +85,34 @@ class Board {
         return total;
     }
 
+    getHighestSquareValue(){
+        let highest = 0;
+        for(let y = 0; y < this.nbSquares; y++){
+            for(let x = 0; x < this.nbSquares; x++){
+                if(this.grid[y][x].value > highest){
+                    highest = this.grid[y][x].value;
+                }
+            }
+        }
+        return highest;
+    }
+
+    getNbEmptySquares(){
+        let nbTotalSquares = this.nbSquares * this.nbSquares;
+        for(let y = 0; y<this.nbSquares; y++){
+            for(let x = 0; x<this.nbSquares; x++){
+                if(!this.grid[y][x].isEmpty()){
+                    nbTotalSquares--;
+                }
+            }
+        }
+        return nbTotalSquares;
+    }
+
     moveSquares (move, dir) {
+
+        let nbSquaresMoved = 0;
+
         for(let i = 0; i < this.nbSquares; i++){
             let line = [];
             if(dir == "horizontal"){
@@ -104,7 +128,7 @@ class Board {
                 }
 
                 if(move == 1){
-                    line = verticalLine.reverse();
+                    line = verticalLine.slice().reverse();
                 } else if(move == -1){
                     line = verticalLine;
                 }
@@ -131,15 +155,17 @@ class Board {
 
                     //Check for moving into itself is handled inside moveTo
                     //Undefined if border square, because no neighbor after it
-                    if(targetSquare != undefined){
+                    if(targetSquare != undefined && currentSquare != targetSquare){
                         currentSquare.moveTo(targetSquare);
+                        nbSquaresMoved++;
                     }
                 }
             }
         }
+        return nbSquaresMoved;
     }
 
-    spawnSquares(nbNewSquaresInit = 1){
+    spawnSquares(nbNewSquares = 1){
         let indexes = [];
         for(let i=0; i<this.nbSquares * this.nbSquares; i++){
             indexes.push(i);
@@ -151,8 +177,6 @@ class Board {
             indexes[j] = temp;
         }
 
-        let nbNewSquares = nbNewSquaresInit;
-
         for(let i=0; i<this.nbSquares * this.nbSquares && nbNewSquares > 0; i++){
             let index = indexes.pop(i);
             let square = this.grid[Math.floor(index / this.nbSquares)][index % this.nbSquares];
@@ -162,10 +186,6 @@ class Board {
                 square.value = valueChance < 0.75 ? 2 : 4;
                 nbNewSquares--;
             }
-        }
-
-        if(nbNewSquares == nbNewSquaresInit){
-            gameFinished = true;
         }
     }
 
@@ -233,33 +253,48 @@ $(document).keypress(function (evt) {
     if(gameFinished == false) {
         let move = 0;
         let dir = "";
+        let wasMoveKey = false;
         switch(evt.key){
             case "s" :
                 move = 1;
                 dir = "vertical";
+                wasMoveKey = true;
             break;
             case "w" :
                 move = -1;
                 dir = "vertical";
+                wasMoveKey = true;
             break;
             case "d" :
                 move = 1;
                 dir = "horizontal";
+                wasMoveKey = true;
             break;
             case "a" :
                 move = -1;
                 dir = "horizontal";
+                wasMoveKey = true;
             break;
         }
         
-        currentBoard.moveSquares(move, dir);
-        currentBoard.spawnSquares();
-        currentBoard.draw(context);
-    } 
+        if(wasMoveKey) {
+            if(currentBoard.moveSquares(move, dir) > 0){
+                currentBoard.spawnSquares();
+                currentBoard.draw(context);
+                
+                if(currentBoard.getHighestSquareValue() == 2048){
+                    gameFinished = true;
+                }
+            } else {
+                if(currentBoard.getNbEmptySquares() == 0){
+                    gameFinished = true;
+                }
+            }
 
-    if(gameFinished == true){
-        alert("Game finished, winner is " + (currentBoard.getScore() > opponentBoard.getScore() ? "you" : "opponent") + "!");
-    }
-    
+            if(gameFinished == true){
+                alert("Game finished, winner is " + (currentBoard.getScore() > opponentBoard.getScore() ? "you" : "opponent") + "!");
+            }
+        }
+    } 
 });
 
