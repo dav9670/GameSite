@@ -131,8 +131,9 @@ class Board {
 
                     //Check for moving into itself is handled inside moveTo
                     //Undefined if border square, because no neighbor after it
-                    if(targetSquare != undefined)
+                    if(targetSquare != undefined){
                         currentSquare.moveTo(targetSquare);
+                    }
                 }
             }
         }
@@ -156,7 +157,9 @@ class Board {
             let index = indexes.pop(i);
             let square = this.grid[Math.floor(index / this.nbSquares)][index % this.nbSquares];
             if(square.isEmpty()){
-                square.value = Math.pow(2, Math.round(Math.random() + 1));
+                //square.value = Math.pow(2, Math.round(Math.random() + 1));
+                let valueChance = Math.random();
+                square.value = valueChance < 0.75 ? 2 : 4;
                 nbNewSquares--;
             }
         }
