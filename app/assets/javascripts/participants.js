@@ -2,6 +2,8 @@
 // All this logic will automatically be available in application.js.
 // You can use CoffeeScript in this file: http://coffeescript.org/
 
+//var tinycolor = require("tinycolor2");
+
 let canvas;
 let context;
 
@@ -11,9 +13,8 @@ let opponentBoard;
 let gameFinished = false;
 
 class Square {
-    constructor (value, color, drawLength, drawOffsetX, drawOffsetY) {
+    constructor (value, drawLength, drawOffsetX, drawOffsetY) {
         this.value = value;
-        this.color = color;
         this.drawLength = drawLength;
         this.drawOffsetX = drawOffsetX;
         this.drawOffsetY = drawOffsetY;
@@ -30,29 +31,38 @@ class Square {
         }
     }
 
+    getColor(){
+        let colorValue = this.value == 0 ? tinycolor("white") : tinycolor("orange").lighten().lighten().lighten().lighten();
+        let boundary = Math.log2(this.value)
+        for(let i = 0; i < boundary; i++){
+            colorValue = colorValue.darken();
+        }
+        return colorValue;
+    }
+
     draw(context){
         if(!this.isEmpty()){
             context.clearRect(this.drawOffestX, this.drawOffsetY, this.drawLength, this.drawLength);
     
             context.beginPath();
             context.rect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
-            context.fillStyle = this.color;
+            context.fillStyle = this.getColor();
             context.fill();
             context.stroke();
     
             context.textAlign = 'center';
             context.textBaseline = 'middle';
             context.font = '20px Arial';
-            context.fillStyle = 'black';
+            context.fillStyle = this.getColor().isDark() ? 'white' : 'black';
             context.fillText(this.isEmpty() ? "" : this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
         }
     }
 }
 
 class Board {
-    constructor (drawLength, drawOffestX, drawOffsetY) {
+    constructor (drawLength, drawOffsetX, drawOffsetY) {
         this.drawLength = drawLength;
-        this.drawOffestX = drawOffestX;
+        this.drawOffsetX = drawOffsetX;
         this.drawOffsetY = drawOffsetY;
         this.nbSquares = 4;
         this.grid = [];
@@ -60,12 +70,22 @@ class Board {
             let column = [];
             for (let x = 0; x < this.nbSquares; x++) {
                 let sLength = this.drawLength / this.nbSquares;
-                let startX = x * sLength + this.drawOffestX;
+                let startX = x * sLength + this.drawOffsetX;
                 let startY = y * sLength + this.drawOffsetY;
-                column[x] = new Square(0, 'white', sLength - 16, startX + 8, startY + 8);
+                column[x] = new Square(0, sLength - 16, startX + 8, startY + 8);
             }
             this.grid[y] = column;
         }
+    }
+
+    getScore(){
+        let total = 0;
+        for(let y = 0; y < this.nbSquares; y++){
+            for(let x = 0; x < this.nbSquares; x++){
+                total += this.grid[y][x].value;
+            }
+        }
+        return total;
     }
 
     moveSquares (move, dir) {
@@ -118,7 +138,7 @@ class Board {
         }
     }
 
-    spawnSquares(nbNewSquares = Math.round(Math.random()) + 1){
+    spawnSquares(nbNewSquaresInit = 1){
         let indexes = [];
         for(let i=0; i<this.nbSquares * this.nbSquares; i++){
             indexes.push(i);
@@ -130,38 +150,48 @@ class Board {
             indexes[j] = temp;
         }
 
+        let nbNewSquares = nbNewSquaresInit;
+
         for(let i=0; i<this.nbSquares * this.nbSquares && nbNewSquares > 0; i++){
             let index = indexes.pop(i);
             let square = this.grid[Math.floor(index / this.nbSquares)][index % this.nbSquares];
             if(square.isEmpty()){
-                square.value = Math.pow(2, Math.round(Math.random() + 1));;
+                square.value = Math.pow(2, Math.round(Math.random() + 1));
                 nbNewSquares--;
             }
         }
 
-        if(nbNewSquares > 0){
+        if(nbNewSquares == nbNewSquaresInit){
             gameFinished = true;
         }
     }
 
     isInside(x, y){
-        return  x > this.drawOffestX && x < this.drawOffestX + this.drawLength &&
+        return  x > this.drawOffsetX && x < this.drawOffsetX + this.drawLength &&
                 y > this.drawOffsetY && y < this.drawOffsetY + this.drawLength;
     }
 
     indexOf(x, y){
         if(this.isInside(x, y)){
-            return { indexX : Math.floor((x - this.drawOffestX) / (this.drawLength / this.nbSquares)), indexY : Math.floor((y - this.drawOffsetY) / (this.drawLength / this.nbSquares))};
+            return { indexX : Math.floor((x - this.drawOffsetX) / (this.drawLength / this.nbSquares)), indexY : Math.floor((y - this.drawOffsetY) / (this.drawLength / this.nbSquares))};
         }
         return null;
     }
 
     draw (context) {
-        context.clearRect(this.drawOffestX, this.drawOffsetY, this.drawLength, this.drawLength);
+
+        context.clearRect(this.drawOffsetX, this.drawOffsetY - 50, this.drawLength, this.drawLength + 50);
+
+        context.textAlign = 'center';
+        context.textBaseline = 'top';
+        context.font = '20px Arial';
+        context.fillStyle = 'black';
+        context.fillText("Score : " + this.getScore(), this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY - 50, this.drawLength);
+
         for (let y = 0; y < this.grid.length; y++) {
             for (let x = 0; x < this.grid[y].length; x++) {
                 let sLength = this.drawLength / this.nbSquares;
-                let startX = x * sLength + this.drawOffestX;
+                let startX = x * sLength + this.drawOffsetX;
                 let startY = y * sLength + this.drawOffsetY;
 
                 context.beginPath();
@@ -223,8 +253,9 @@ $(document).keypress(function (evt) {
         currentBoard.spawnSquares();
         currentBoard.draw(context);
     } 
+
     if(gameFinished == true){
-        alert("You lost the game!");
+        alert("Game finished, winner is " + (currentBoard.getScore() > opponentBoard.getScore() ? "you" : "opponent") + "!");
     }
     
 });
