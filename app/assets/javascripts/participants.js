@@ -6,55 +6,48 @@ let frameRate = 60;
 let animationDate = new Date().getTime();
 
 Number.prototype.inRangeOf = function(other,range){
+    range = Math.abs(range);
     return this > other - range && this < other + range;
 };
 
 class Square {
     constructor (value, drawLength, drawOffsetX, drawOffsetY) {
+        //add showValue
         this.value = value;
         this.drawLength = drawLength;
-        this.initDrawOffsetX = drawOffsetX;
-        this.initDrawOffsetY = drawOffsetY;
         this.drawOffsetX = drawOffsetX;
         this.drawOffsetY = drawOffsetY;
     }
-    
-    isEmpty(){
-        return this.value == 0;
+
+    combine(targetSquare){
+        targetSquare.value += this.value;
     }
 
-    moveTo(targetSquare, board){
-        if(targetSquare != this){
+    moveTo(board, targetX, targetY){
+        let moveX = (targetSquare.drawOffsetX - this.drawOffsetX) / 10;
+        let moveY = (targetSquare.drawOffsetY - this.drawOffsetY) / 10;
+        this.moveToDraw(board, targetX, targetY, moveX, moveY);
+    }
 
-            targetSquare.value = targetSquare.isEmpty() ? this.value : targetSquare.value * 2;
-            this.value = 0;
+    moveToDraw(board, targetX, targetY, moveX, moveY){
+        this.drawOffsetX += moveX;
+        this.drawOffsetY += moveY;
 
-            let moveX = (targetSquare.drawOffsetX - this.drawOffsetX) / 10;
-            let moveY = (targetSquare.drawOffsetY - this.drawOffsetY) / 10;
-            this.moveToDraw(targetSquare, board, moveX, moveY);
+        let animationTime = 1000 / frameRate;
+        let currentTime = new Date().getTime()
+        if(animationDate < currentTime + animationTime){
+            animationDate = currentTime + animationTime;
         }
-    }
 
-    moveToDraw(targetSquare, board, moveX, moveY){
-        if(this.drawOffsetX.inRangeOf(targetSquare.initDrawOffsetX, moveX != 0 ? Math.abs(moveX * 1.5) : 1) && this.drawOffsetY.inRangeOf(targetSquare.initDrawOffsetY, moveY != 0 ? Math.abs(moveY * 1.5) : 1)){
-            this.drawOffsetX = this.initDrawOffsetX;
-            this.drawOffsetY = this.initDrawOffsetY;
-            targetSquare.draw(context);
-        } else {
-            this.drawOffsetX += moveX;
-            this.drawOffsetY += moveY;
+        let self = this;
 
-            let animationTime = 1000 / frameRate;
-            let currentTime = new Date().getTime()
-            if(animationDate < currentTime + animationTime){
-                animationDate = currentTime + animationTime;
-            }
-
-            let self = this;
-
+        if(this.drawOffsetX.inRangeOf(targetX, moveX) && this.drawOffsetY.inRangeOf(targetY, moveY)){
+            this.drawOffsetX = targetX;
+            this.drawOffsetY = targetY;
+        } else { 
             setTimeout(function() {self.moveToDraw(targetSquare, board, moveX, moveY);}, animationTime);
         }
-        this.draw(context);
+            
         board.draw(context, "green");
     }
 
@@ -68,21 +61,19 @@ class Square {
     }
 
     draw(context){
-        if(!this.isEmpty()){
-            context.clearRect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
-    
-            context.beginPath();
-            context.rect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
-            context.fillStyle = this.getColor();
-            context.fill();
-            context.stroke();
-    
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.font = '20px Arial';
-            context.fillStyle = this.getColor().isDark() ? 'white' : 'black';
-            context.fillText(this.isEmpty() ? "" : this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
-        }
+        context.clearRect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
+
+        context.beginPath();
+        context.rect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
+        context.fillStyle = this.getColor();
+        context.fill();
+        context.stroke();
+
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.font = '20px Arial';
+        context.fillStyle = this.getColor().isDark() ? 'white' : 'black';
+        context.fillText(this.isEmpty() ? "" : this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
     }
 }
 
@@ -93,13 +84,11 @@ class Board {
         this.drawOffsetY = drawOffsetY;
         this.nbSquares = 4;
         this.grid = [];
+        this.grid.length = this.nbSquares;
         for (let y = 0; y < this.nbSquares; y++) {
             let column = [];
-            for (let x = 0; x < this.nbSquares; x++) {
-                let sLength = this.drawLength / this.nbSquares;
-                let startX = x * sLength + this.drawOffsetX;
-                let startY = y * sLength + this.drawOffsetY;
-                column[x] = new Square(0, sLength - 16, startX + 8, startY + 8);
+            for(let x = 0; x<this.nbSquares; x++){
+                column[x] = null;
             }
             this.grid[y] = column;
         }
@@ -109,7 +98,10 @@ class Board {
         let total = 0;
         for(let y = 0; y < this.nbSquares; y++){
             for(let x = 0; x < this.nbSquares; x++){
-                total += this.grid[y][x].value;
+                let square = this.grid[y][x];
+                if(square){
+                    total += square.value;
+                }
             }
         }
         return total;
@@ -119,8 +111,11 @@ class Board {
         let highest = 0;
         for(let y = 0; y < this.nbSquares; y++){
             for(let x = 0; x < this.nbSquares; x++){
-                if(this.grid[y][x].value > highest){
-                    highest = this.grid[y][x].value;
+                let square = this.grid[y][x];
+                if(square){
+                    if(square.value > highest){
+                        highest = square.value;
+                    }
                 }
             }
         }
@@ -128,35 +123,43 @@ class Board {
     }
 
     getNbEmptySquares(){
-        let nbTotalSquares = this.nbSquares * this.nbSquares;
+        let nbSquareEmpty = 0;
         for(let y = 0; y<this.nbSquares; y++){
             for(let x = 0; x<this.nbSquares; x++){
-                if(!this.grid[y][x].isEmpty()){
-                    nbTotalSquares--;
+                if(!this.grid[y][x]){
+                    nbSquareEmpty++;
                 }
             }
         }
-        return nbTotalSquares;
+        return nbSquareEmpty;
     }
 
     hasMovableSquare(){
+        if(this.getNbEmptySquares() > 0)
+            return true;
+
         for(let y=0; y<this.nbSquares; y++){
             for(let x=0; x<this.nbSquares; x++){
                 let currentSquare = this.grid[y][x];
+                
+                for(let i=0; i<4; i++){
+                    let offsetY = i%2 == 0 ? i/2 == 0 ? -1 : 1 : 0;
+                    let offsetX = i%2 == 1 ? i/2 == 0 ? -1 : 1 : 0;
+                    let targetSquare = this.grid[offsetY][offsetX];
 
-                if( (y+1 > 0 && y+1 < this.nbSquares && this.grid[y+1][x].value == currentSquare.value) || 
-                    (x+1 > 0 && x+1 < this.nbSquares && this.grid[y][x+1].value == currentSquare.value) || 
-                    (y-1 > 0 && y-1 < this.nbSquares && this.grid[y-1][x].value == currentSquare.value) ||
-                    (x-1 > 0 && x-1 < this.nbSquares && this.grid[y][x-1].value == currentSquare.value) ){
-                        return true;
+                    if(targetSquare){
+                        if(targetSquare.value == currentSquare.value){
+                            return true;
+                        }
                     }
+                }
             }
         }
+
         return false;
     }
 
     moveSquares (move, dir) {
-
         let nbSquaresMoved = 0;
 
         for(let i = 0; i < this.nbSquares; i++){
@@ -184,13 +187,13 @@ class Board {
                 let currentSquare = line[x];
                 
                 //From currentSquare, scan to the end of the line until hits another non-empty square
-                if(!currentSquare.isEmpty()){
+                if(currentSquare){
                     //Loops until hit boundary or targetSquare is not empty, if hit boundary, just move square to boundary
                     let targetSquare;
                     for(let rest = x - 1; rest >= 0; rest--){
                         targetSquare = line[rest];
 
-                        if(!targetSquare.isEmpty()){
+                        if(targetSquare){
                             //if currentValue and neighborValue are the same, move square to neighbor, else move to the square before neighbor
                             if(targetSquare.value != currentSquare.value){
                                 targetSquare = line[rest + 1];
@@ -199,11 +202,24 @@ class Board {
                         }
                     }
 
-                    //Check for moving into itself is handled inside moveTo
-                    //Undefined if border square, because no neighbor after it
-                    if(targetSquare != undefined && currentSquare != targetSquare){
-                        currentSquare.moveTo(targetSquare, this);
-                        nbSquaresMoved++;
+                    //TODO Move to index y,x multiplied by square dims, instead of target position
+                    //TODO Make a list of square moving to combine, make them null in the grid
+                    if(targetSquare){
+                        if(currentSquare != targetSquare){
+                            currentSquare.combine(targetSquare);
+                            currentSquare.moveTo(this, targetSquare.drawOffsetX, targetSquare.drawOffsetY);
+                            //put currentSquare inside movingList
+                            //grid[currentIndex][currentIndex] = null;
+                            nbSquaresMoved++;
+                        }
+                    } else {
+                        // if square is not out of bounds
+                        if(targetSquare != undefined){
+                            //currentSquare.moveTo(this, x, y);
+                            //grid[currentIndex][currentIndex] = null;
+                            //this.grid[y][x] = currentSquare;
+                            nbSquaresMoved++;
+                        }
                     }
                 }
             }
@@ -225,11 +241,19 @@ class Board {
 
         for(let i=0; i<this.nbSquares * this.nbSquares && nbNewSquares > 0; i++){
             let index = indexes.pop(i);
-            let square = this.grid[Math.floor(index / this.nbSquares)][index % this.nbSquares];
-            if(square.isEmpty()){
-                //square.value = Math.pow(2, Math.round(Math.random() + 1));
-                let valueChance = Math.random();
-                square.value = valueChance < 0.75 ? 2 : 4;
+            let y = Math.floor(index / this.nbSquares);
+            let x = index % this.nbSquares;
+
+            if(!this.grid[y][x]){
+                
+                let value = Math.random() < 0.75 ? 2 : 4;
+
+                let sLength = this.drawLength / this.nbSquares;
+                let startX = x * sLength + this.drawOffsetX;
+                let startY = y * sLength + this.drawOffsetY;
+
+                this.grid[y][x] = new Square(value, sLength - 16, startX + 8, startY + 8);
+
                 nbNewSquares--;
             }
         }
@@ -247,7 +271,7 @@ class Board {
         return null;
     }
 
-    draw (context, outlineColor = "black") {
+    draw (context, outlineColor) {
 
         context.clearRect(this.drawOffsetX, this.drawOffsetY - 50, this.drawLength, this.drawLength + 50);
 
@@ -267,18 +291,23 @@ class Board {
                 context.rect(startX, startY, sLength, sLength);
                 context.stroke();
 
-                this.grid[y][x].draw(context);
+                let square = this.grid[y][x];
+                if(square){
+                    square.draw(context);
+                }
             }
         }
 
-        context.beginPath();
-        context.strokeStyle = outlineColor;
-        context.lineWidth = 5;
-        context.rect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
-        context.stroke();
+        if(outlineColor){
+            context.beginPath();
+            context.strokeStyle = outlineColor;
+            context.lineWidth = 5;
+            context.rect(this.drawOffsetX - 1, this.drawOffsetY - 1, this.drawLength + 1, this.drawLength + 1);
+            context.stroke();
 
-        context.lineWidth = 1;
-        context.strokeStyle = "black";
+            context.lineWidth = 1;
+            context.strokeStyle = "black";
+        }
     }
 }
 
@@ -356,7 +385,7 @@ $(document).keypress(function (evt) {
     
                     draw();
     
-                    if(currentBoard.getHighestSquareValue() == 2048 || (currentBoard.getNbEmptySquares() == 0 && !currentBoard.hasMovableSquare())){
+                    if(currentBoard.getHighestSquareValue() == 2048 || !currentBoard.hasMovableSquare()){
                         gameFinished = true;
                     }
                 }
