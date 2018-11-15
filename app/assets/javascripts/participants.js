@@ -7,7 +7,7 @@ let animationDate = new Date().getTime();
 
 Number.prototype.inRangeOf = function(other,range){
     range = Math.abs(range);
-    return this > other - range && this < other + range;
+    return this >= other - range && this <= other + range;
 };
 
 class Square {
@@ -19,33 +19,46 @@ class Square {
         this.drawOffsetY = drawOffsetY;
     }
 
-    combine(targetSquare){
-        targetSquare.value += this.value;
+    absorb(targetSquare){
+        this.value += targetSquare.value;
     }
 
-    moveTo(board, targetX, targetY){
-        let moveX = (targetSquare.drawOffsetX - this.drawOffsetX) / 10;
-        let moveY = (targetSquare.drawOffsetY - this.drawOffsetY) / 10;
-        this.moveToDraw(board, targetX, targetY, moveX, moveY);
+    /**
+     * 
+     * @param {Board} board 
+     * @param {Number} targetX 
+     * @param {Number} targetY 
+     * @param {Function} arrivedFunction A function that will be called when the square arrived at its destination, function takes in parameter the square
+     */
+    moveTo(board, targetX, targetY, arrivedFunction = undefined){
+        let nbSteps = 10;
+        let moveX = (targetX - this.drawOffsetX) / nbSteps;
+        let moveY = (targetY - this.drawOffsetY) / nbSteps;
+
+        let totalAnimationTime = 1000 / frameRate * nbSteps;
+        let currentTime = new Date().getTime()
+        if(animationDate < currentTime + totalAnimationTime){
+            animationDate = currentTime + totalAnimationTime;
+        }
+
+        this.moveToDraw(board, targetX, targetY, moveX, moveY, arrivedFunction);
     }
 
-    moveToDraw(board, targetX, targetY, moveX, moveY){
+    moveToDraw(board, targetX, targetY, moveX, moveY, arrivedFunction){
         this.drawOffsetX += moveX;
         this.drawOffsetY += moveY;
-
-        let animationTime = 1000 / frameRate;
-        let currentTime = new Date().getTime()
-        if(animationDate < currentTime + animationTime){
-            animationDate = currentTime + animationTime;
-        }
 
         let self = this;
 
         if(this.drawOffsetX.inRangeOf(targetX, moveX) && this.drawOffsetY.inRangeOf(targetY, moveY)){
             this.drawOffsetX = targetX;
             this.drawOffsetY = targetY;
-        } else { 
-            setTimeout(function() {self.moveToDraw(targetSquare, board, moveX, moveY);}, animationTime);
+            if(arrivedFunction){
+                arrivedFunction(this);
+            }
+        } else {
+            let animationTime = 1000 / frameRate;
+            setTimeout(function() {self.moveToDraw(board, targetX, targetY, moveX, moveY, arrivedFunction);}, animationTime);
         }
             
         board.draw(context, "green");
@@ -73,7 +86,7 @@ class Square {
         context.textBaseline = 'middle';
         context.font = '20px Arial';
         context.fillStyle = this.getColor().isDark() ? 'white' : 'black';
-        context.fillText(this.isEmpty() ? "" : this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
+        context.fillText(this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
     }
 }
 
@@ -145,13 +158,19 @@ class Board {
                 for(let i=0; i<4; i++){
                     let offsetY = i%2 == 0 ? i/2 == 0 ? -1 : 1 : 0;
                     let offsetX = i%2 == 1 ? i/2 == 0 ? -1 : 1 : 0;
-                    let targetSquare = this.grid[offsetY][offsetX];
+                    
+                    let indexY = y + offsetY;
+                    let indexX = x + offsetX;
 
-                    if(targetSquare){
-                        if(targetSquare.value == currentSquare.value){
-                            return true;
+                    if(indexY >= 0 && indexY < this.nbSquares && indexX >= 0 && indexX < this.nbSquares){
+                        let targetSquare = this.grid[indexY][indexX];
+
+                        if(targetSquare){
+                            if(targetSquare.value == currentSquare.value){
+                                return true;
+                            }
                         }
-                    }
+                    }                    
                 }
             }
         }
@@ -159,65 +178,90 @@ class Board {
         return false;
     }
 
+    moveSquareTo(square, indexY, indexX){
+
+        for(let y=0; y<this.nbSquares; y++){
+            let squareIndex = this.grid[y].indexOf(square);
+            if(squareIndex != -1){
+                this.grid[y][squareIndex] = null;
+            }
+        }
+
+        if(this.grid[indexY][indexX]){
+            this.grid[indexY][indexX].absorb(square);
+            //TODO Add to array of moving elements, delete when at destination
+        } else {
+            this.grid[indexY][indexX] = square;
+        }
+
+        square.moveTo(this, indexX * (this.drawLength / this.nbSquares) + this.drawOffsetX + 8, indexY * (this.drawLength / this.nbSquares) + this.drawOffsetY + 8, function(square) {
+
+        });
+    }
+
     moveSquares (move, dir) {
         let nbSquaresMoved = 0;
 
         for(let i = 0; i < this.nbSquares; i++){
-            let line = [];
-            if(dir == "horizontal"){
-                if(move == 1){
-                    line = this.grid[i].slice().reverse();
-                } else if(move == -1){
-                    line = this.grid[i];
-                }
-            } else if (dir == "vertical"){
-                let verticalLine = [];
-                for(let x = 0; x<this.nbSquares; x++){
-                    verticalLine.push(this.grid[x][i]);
-                }
-
-                if(move == 1){
-                    line = verticalLine.slice().reverse();
-                } else if(move == -1){
-                    line = verticalLine;
-                }
-            }
-
             for(let x = 0; x<this.nbSquares; x++){
+
+                let line = [];
+                if(dir == "horizontal"){
+                    if(move == 1){
+                        line = this.grid[i].slice().reverse();
+                    } else if(move == -1){
+                        line = this.grid[i];
+                    }
+                } else if (dir == "vertical"){
+                    let verticalLine = [];
+                    for(let j = 0; j<this.nbSquares; j++){
+                        verticalLine.push(this.grid[j][i]);
+                    }
+
+                    if(move == 1){
+                        line = verticalLine.slice().reverse();
+                    } else if(move == -1){
+                        line = verticalLine;
+                    }
+                }
+
+
                 let currentSquare = line[x];
                 
                 //From currentSquare, scan to the end of the line until hits another non-empty square
                 if(currentSquare){
                     //Loops until hit boundary or targetSquare is not empty, if hit boundary, just move square to boundary
-                    let targetSquare;
-                    for(let rest = x - 1; rest >= 0; rest--){
-                        targetSquare = line[rest];
-
-                        if(targetSquare){
+                    let rest;
+                    for(rest = x - 1; rest >= 0; rest--){
+                        if(line[rest]){
                             //if currentValue and neighborValue are the same, move square to neighbor, else move to the square before neighbor
-                            if(targetSquare.value != currentSquare.value){
-                                targetSquare = line[rest + 1];
+                            if(line[rest].value != currentSquare.value){
+                                rest++;
                             }
                             break;
                         }
                     }
 
-                    //TODO Move to index y,x multiplied by square dims, instead of target position
-                    //TODO Make a list of square moving to combine, make them null in the grid
-                    if(targetSquare){
-                        if(currentSquare != targetSquare){
-                            currentSquare.combine(targetSquare);
-                            currentSquare.moveTo(this, targetSquare.drawOffsetX, targetSquare.drawOffsetY);
-                            //put currentSquare inside movingList
-                            //grid[currentIndex][currentIndex] = null;
-                            nbSquaresMoved++;
+                    if(rest != undefined){
+                        
+                        if(rest == -1)
+                            rest = 0;
+
+                        let indexY;
+                        let indexX;
+                        
+                        if(dir == "horizontal"){
+                            indexY = i;
+                            indexX = move == -1 ? rest : this.nbSquares - (rest + 1);
+                        } else if(dir == "vertical"){
+                            indexY = move == -1 ? rest : this.nbSquares - (rest + 1);
+                            indexX = i;
                         }
-                    } else {
-                        // if square is not out of bounds
-                        if(targetSquare != undefined){
-                            //currentSquare.moveTo(this, x, y);
-                            //grid[currentIndex][currentIndex] = null;
-                            //this.grid[y][x] = currentSquare;
+
+                        //TODO Move to index y,x multiplied by square dims, instead of target position
+                        //TODO Make a list of square moving to combine, make them null in the grid
+                        if(this.grid[indexY][indexX] != currentSquare){
+                            this.moveSquareTo(currentSquare, indexY, indexX);
                             nbSquaresMoved++;
                         }
                     }
@@ -378,16 +422,17 @@ $(document).keypress(function (evt) {
             
             if(wasMoveKey) {
                 if(currentBoard.moveSquares(move, dir) > 0){
-                    currentBoard.spawnSquares();
-    
-                    turn++;
-                    currentBoard = Math.floor(turn / turnPerPlayer) % 2 == 0 ? hostBoard : opponentBoard;
-    
-                    draw();
-    
-                    if(currentBoard.getHighestSquareValue() == 2048 || !currentBoard.hasMovableSquare()){
-                        gameFinished = true;
-                    }
+                    setTimeout(function(){
+                        currentBoard.spawnSquares(); 
+                        turn++;
+                        currentBoard = Math.floor(turn / turnPerPlayer) % 2 == 0 ? hostBoard : opponentBoard;
+        
+                        draw();
+        
+                        if(currentBoard.getHighestSquareValue() == 2048 || !currentBoard.hasMovableSquare()){
+                            gameFinished = true;
+                        }
+                    }, animationDate - new Date().getTime());
                 }
             }
         }
