@@ -10,6 +10,14 @@ Number.prototype.inRangeOf = function(other,range){
     return this >= other - range && this <= other + range;
 };
 
+Array.prototype.remove = function(object){
+    for(let i=0; i<this.length; i++){
+        if(this[i] == object){
+            this.splice(i,1);
+        }
+    }
+}
+
 class Square {
     constructor (value, drawLength, drawOffsetX, drawOffsetY) {
         //add showValue
@@ -30,7 +38,7 @@ class Square {
      * @param {Number} targetY 
      * @param {Function} arrivedFunction A function that will be called when the square arrived at its destination, function takes in parameter the square
      */
-    moveTo(board, targetX, targetY, arrivedFunction = undefined){
+    moveTo(targetX, targetY, arrivedFunction = undefined){
         let nbSteps = 10;
         let moveX = (targetX - this.drawOffsetX) / nbSteps;
         let moveY = (targetY - this.drawOffsetY) / nbSteps;
@@ -41,10 +49,10 @@ class Square {
             animationDate = currentTime + totalAnimationTime;
         }
 
-        this.moveToDraw(board, targetX, targetY, moveX, moveY, arrivedFunction);
+        this.moveToDraw(targetX, targetY, moveX, moveY, arrivedFunction);
     }
 
-    moveToDraw(board, targetX, targetY, moveX, moveY, arrivedFunction){
+    moveToDraw(targetX, targetY, moveX, moveY, arrivedFunction){
         this.drawOffsetX += moveX;
         this.drawOffsetY += moveY;
 
@@ -58,10 +66,10 @@ class Square {
             }
         } else {
             let animationTime = 1000 / frameRate;
-            setTimeout(function() {self.moveToDraw(board, targetX, targetY, moveX, moveY, arrivedFunction);}, animationTime);
+            setTimeout(function() {self.moveToDraw(targetX, targetY, moveX, moveY, arrivedFunction);}, animationTime);
         }
             
-        board.draw(context, "green");
+        drawAll();
     }
 
     getColor(){
@@ -189,13 +197,13 @@ class Board {
 
         if(this.grid[indexY][indexX]){
             this.grid[indexY][indexX].absorb(square);
-            //TODO Add to array of moving elements, delete when at destination
+            movingSquares.push(square);
         } else {
             this.grid[indexY][indexX] = square;
         }
 
-        square.moveTo(this, indexX * (this.drawLength / this.nbSquares) + this.drawOffsetX + 8, indexY * (this.drawLength / this.nbSquares) + this.drawOffsetY + 8, function(square) {
-
+        square.moveTo(indexX * (this.drawLength / this.nbSquares) + this.drawOffsetX + 8, indexY * (this.drawLength / this.nbSquares) + this.drawOffsetY + 8, function(square) {
+            movingSquares.remove(square);
         });
     }
 
@@ -204,6 +212,7 @@ class Board {
 
         for(let i = 0; i < this.nbSquares; i++){
             for(let x = 0; x<this.nbSquares; x++){
+
 
                 let line = [];
                 if(dir == "horizontal"){
@@ -224,7 +233,6 @@ class Board {
                         line = verticalLine;
                     }
                 }
-
 
                 let currentSquare = line[x];
                 
@@ -249,7 +257,7 @@ class Board {
 
                         let indexY;
                         let indexX;
-                        
+
                         if(dir == "horizontal"){
                             indexY = i;
                             indexX = move == -1 ? rest : this.nbSquares - (rest + 1);
@@ -367,6 +375,8 @@ let gameFinished = false;
 let turn = 0;
 let turnPerPlayer = 10;
 
+let movingSquares = [];
+
 $(document).ready(function () {
     canvas = document.getElementById('game_canvas');
     context = canvas.getContext('2d');
@@ -379,7 +389,7 @@ $(document).ready(function () {
 
     currentBoard = hostBoard;
 
-    draw();
+    drawAll();
 
     canvas.addEventListener('mousedown', function (event) {
         let rect = canvas.getBoundingClientRect();
@@ -427,7 +437,7 @@ $(document).keypress(function (evt) {
                         turn++;
                         currentBoard = Math.floor(turn / turnPerPlayer) % 2 == 0 ? hostBoard : opponentBoard;
         
-                        draw();
+                        drawAll();
         
                         if(currentBoard.getHighestSquareValue() == 2048 || !currentBoard.hasMovableSquare()){
                             gameFinished = true;
@@ -443,7 +453,11 @@ $(document).keypress(function (evt) {
     }
 });
 
-function draw(){
+function drawAll(){
     hostBoard.draw(context, hostBoard == currentBoard ? "green" : "red");
     opponentBoard.draw(context,  opponentBoard == currentBoard ? "green" : "red");
+
+    for(let i=0; i<movingSquares.length; i++){
+        movingSquares[i].draw(context);
+    }
 }
