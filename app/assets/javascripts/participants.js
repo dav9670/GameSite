@@ -207,75 +207,64 @@ class Board {
         });
     }
 
+    /**
+     * Move all the grid in the direction provided
+     * @param {Number} move Left and Up = -1, Right and Down = 1 
+     * @param {String} dir "h" (horizontal) or "v" (vertical)
+     */
     moveSquares (move, dir) {
         let nbSquaresMoved = 0;
 
-        for(let i = 0; i < this.nbSquares; i++){
-            for(let x = 0; x<this.nbSquares; x++){
+        let squareAdder = move == -1 ? 1 : -1;
+        let squareStart = move == -1 ? 0 : this.nbSquares - 1;
+        let squareEnd = move == -1 ? this.nbSquares : -1;
 
-
-                let line = [];
-                if(dir == "horizontal"){
-                    if(move == 1){
-                        line = this.grid[i].slice().reverse();
-                    } else if(move == -1){
-                        line = this.grid[i];
-                    }
-                } else if (dir == "vertical"){
-                    let verticalLine = [];
-                    for(let j = 0; j<this.nbSquares; j++){
-                        verticalLine.push(this.grid[j][i]);
-                    }
-
-                    if(move == 1){
-                        line = verticalLine.slice().reverse();
-                    } else if(move == -1){
-                        line = verticalLine;
-                    }
-                }
-
-                let currentSquare = line[x];
-                
-                //From currentSquare, scan to the end of the line until hits another non-empty square
+        let restAdder = move;
+        let restEnd = move == -1 ? -1: this.nbSquares;
+        
+        
+        for(let lineIndex=0; lineIndex<this.nbSquares; lineIndex++){
+            for(let squareIndex=squareStart; squareIndex!=squareEnd; squareIndex += squareAdder){
+                //if horizontal, loop through second array by keepin same first index
+                //else if vertical, loop through first array by keeping same second index
+                let firstIndex = (dir == "h" ? lineIndex : squareIndex);
+                let secondIndex = (dir == "h" ? squareIndex : lineIndex);
+                let currentSquare = this.grid[firstIndex][secondIndex];
                 if(currentSquare){
-                    //Loops until hit boundary or targetSquare is not empty, if hit boundary, just move square to boundary
-                    let rest;
-                    for(rest = x - 1; rest >= 0; rest--){
-                        if(line[rest]){
-                            //if currentValue and neighborValue are the same, move square to neighbor, else move to the square before neighbor
-                            if(line[rest].value != currentSquare.value){
-                                rest++;
+                    //From currentSquare, scan to the end of the line until hits another non-empty square
+                    let restIndex;
+                    for(restIndex = squareIndex + restAdder; restIndex!=restEnd; restIndex+=restAdder){
+                        let firstIndex = (dir == "h" ? lineIndex : restIndex);
+                        let secondIndex = (dir == "h" ? restIndex : lineIndex);
+                        let restSquare = this.grid[firstIndex][secondIndex];
+
+                        //Loops until a non-empty square is hit, if same values, combine, else take square before
+                        if(restSquare){
+                            if(currentSquare.value != restSquare.value){
+                                restIndex -= restAdder;
                             }
                             break;
                         }
                     }
 
-                    if(rest != undefined){
-                        
-                        if(rest == -1)
-                            rest = 0;
-
-                        let indexY;
-                        let indexX;
-
-                        if(dir == "horizontal"){
-                            indexY = i;
-                            indexX = move == -1 ? rest : this.nbSquares - (rest + 1);
-                        } else if(dir == "vertical"){
-                            indexY = move == -1 ? rest : this.nbSquares - (rest + 1);
-                            indexX = i;
+                    //Need to move square out of loop in case that no other square in line, need to move to boundary
+                    if(restIndex != undefined){
+                        if(restIndex == restEnd){
+                            restIndex -= restAdder;
                         }
 
-                        //TODO Move to index y,x multiplied by square dims, instead of target position
-                        //TODO Make a list of square moving to combine, make them null in the grid
-                        if(this.grid[indexY][indexX] != currentSquare){
-                            this.moveSquareTo(currentSquare, indexY, indexX);
+                        let firstIndex = (dir == "h" ? lineIndex : restIndex);
+                        let secondIndex = (dir == "h" ? restIndex : lineIndex);
+
+                        if(this.grid[firstIndex][secondIndex] != currentSquare){
+                            this.moveSquareTo(currentSquare, firstIndex, secondIndex);
                             nbSquaresMoved++;
                         }
                     }
                 }
             }
         }
+    
         return nbSquaresMoved;
     }
 
@@ -410,22 +399,22 @@ $(document).keypress(function (evt) {
             switch(evt.key){
                 case "s" :
                     move = 1;
-                    dir = "vertical";
+                    dir = "v";
                     wasMoveKey = true;
                 break;
                 case "w" :
                     move = -1;
-                    dir = "vertical";
+                    dir = "v";
                     wasMoveKey = true;
                 break;
                 case "d" :
                     move = 1;
-                    dir = "horizontal";
+                    dir = "h";
                     wasMoveKey = true;
                 break;
                 case "a" :
                     move = -1;
-                    dir = "horizontal";
+                    dir = "h";
                     wasMoveKey = true;
                 break;
             }
