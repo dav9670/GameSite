@@ -3,7 +3,6 @@
 // You can use CoffeeScript in this file: http://coffeescript.org/
 
 let frameRate = 60;
-let animationDate = new Date().getTime();
 
 Number.prototype.inRangeOf = function(other,range){
     range = Math.abs(range);
@@ -31,45 +30,14 @@ class Square {
         this.value += targetSquare.value;
     }
 
-    /**
-     * 
-     * @param {Board} board 
-     * @param {Number} targetX 
-     * @param {Number} targetY 
-     * @param {Function} arrivedFunction A function that will be called when the square arrived at its destination, function takes in parameter the square
-     */
-    moveTo(targetX, targetY, arrivedFunction = undefined){
-        let nbSteps = 10;
-        let moveX = (targetX - this.drawOffsetX) / nbSteps;
-        let moveY = (targetY - this.drawOffsetY) / nbSteps;
-
-        let totalAnimationTime = 1000 / frameRate * nbSteps;
-        let currentTime = new Date().getTime()
-        if(animationDate < currentTime + totalAnimationTime){
-            animationDate = currentTime + totalAnimationTime;
-        }
-
-        this.moveToDraw(targetX, targetY, moveX, moveY, arrivedFunction);
-    }
-
-    moveToDraw(targetX, targetY, moveX, moveY, arrivedFunction){
+    moveBy(moveX, moveY){
         this.drawOffsetX += moveX;
         this.drawOffsetY += moveY;
+    }
 
-        let self = this;
-
-        if(this.drawOffsetX.inRangeOf(targetX, moveX) && this.drawOffsetY.inRangeOf(targetY, moveY)){
-            this.drawOffsetX = targetX;
-            this.drawOffsetY = targetY;
-            if(arrivedFunction){
-                arrivedFunction(this);
-            }
-        } else {
-            let animationTime = 1000 / frameRate;
-            setTimeout(function() {self.moveToDraw(targetX, targetY, moveX, moveY, arrivedFunction);}, animationTime);
-        }
-            
-        drawAll();
+    moveTo(targetX, targetY){
+        this.drawOffsetX = targetX;
+        this.drawOffsetY = targetY;
     }
 
     getColor(){
@@ -113,6 +81,11 @@ class Board {
             }
             this.grid[y] = column;
         }
+        this.turnsPlayed = 0;
+        this.gameFinished = false;
+        this.movingSquares = [];
+        this.nbAnimationSteps = 10;
+        this.animationDate = new Date().getTime();
     }
 
     getScore(){
@@ -197,13 +170,28 @@ class Board {
 
         if(this.grid[indexY][indexX]){
             this.grid[indexY][indexX].absorb(square);
-            movingSquares.push(square);
         } else {
             this.grid[indexY][indexX] = square;
         }
 
-        square.moveTo(indexX * (this.drawLength / this.nbSquares) + this.drawOffsetX + 8, indexY * (this.drawLength / this.nbSquares) + this.drawOffsetY + 8, function(square) {
-            movingSquares.remove(square);
+        let targetX = indexX * (this.drawLength / this.nbSquares) + this.drawOffsetX + 8;
+        let targetY = indexY * (this.drawLength / this.nbSquares) + this.drawOffsetY + 8;
+
+        let moveX = (targetX - square.drawOffsetX) / this.nbAnimationSteps;
+        let moveY = (targetY - square.drawOffsetY) / this.nbAnimationSteps;
+
+        let totalAnimationTime = 1000 / frameRate * this.nbAnimationSteps;
+        let currentTime = new Date().getTime();
+        if(this.animationDate < currentTime + totalAnimationTime){
+            this.animationDate = currentTime + totalAnimationTime;
+        }
+
+        this.movingSquares.push({
+            square: square,
+            moveX: moveX,
+            moveY: moveY,
+            targetX: targetX,
+            targetY: targetY
         });
     }
 
@@ -300,6 +288,29 @@ class Board {
         }
     }
 
+    playTurn(move, dir, funcAfterTurn){
+        if(this.gameFinished == false && this.movingSquares.length == 0 && new Date().getTime() > currentBoard.animationDate + 50 && this.moveSquares(move, dir) > 0){
+            this.moveSquareDraw(context);
+            let self = this;
+            setTimeout(function(){
+                self.spawnSquares();
+                
+                if(self.getHighestSquareValue() >= 2048 || !self.hasMovableSquare()){
+                    self.gameFinished = true;
+                }
+
+                self.draw(canvas.getContext("2d"), self == currentBoard ? "green" : "red");
+
+                funcAfterTurn();
+
+            }, this.animationDate - new Date().getTime());
+            this.turnsPlayed++;
+
+            return true;
+        }
+        return false;
+    }
+
     isInside(x, y){
         return  x > this.drawOffsetX && x < this.drawOffsetX + this.drawLength &&
                 y > this.drawOffsetY && y < this.drawOffsetY + this.drawLength;
@@ -310,6 +321,31 @@ class Board {
             return { indexX : Math.floor((x - this.drawOffsetX) / (this.drawLength / this.nbSquares)), indexY : Math.floor((y - this.drawOffsetY) / (this.drawLength / this.nbSquares))};
         }
         return null;
+    }
+
+    moveSquareDraw(context){
+        for(let i=0; i<this.movingSquares.length; i++){
+            let squareInfos = this.movingSquares[i];
+            let square = squareInfos.square;
+            let moveX = squareInfos.moveX;
+            let moveY = squareInfos.moveY;
+            let targetX = squareInfos.targetX;
+            let targetY = squareInfos.targetY;
+
+            square.moveBy(moveX, moveY);
+            if(square.drawOffsetX.inRangeOf(targetX, moveX) && square.drawOffsetY.inRangeOf(targetY, moveY)){
+                square.moveTo(targetX, targetY);
+                this.movingSquares.remove(squareInfos);
+            }
+        }
+
+        this.draw(context, this == currentBoard ? "green" : "red");
+
+        let self = this;
+
+        if(this.movingSquares.length > 0){
+            setTimeout(function(){self.moveSquareDraw(context);}, 1000 / frameRate);
+        }
     }
 
     draw (context, outlineColor) {
@@ -339,9 +375,14 @@ class Board {
             }
         }
 
+        for(let i=0; i<this.movingSquares.length; i++){
+            let square = this.movingSquares[i].square;
+            square.draw(context);
+        }
+
         if(outlineColor){
             context.beginPath();
-            context.strokeStyle = outlineColor;
+            context.strokeStyle = this.gameFinished ? "black" : outlineColor;
             context.lineWidth = 5;
             context.rect(this.drawOffsetX - 1, this.drawOffsetY - 1, this.drawLength + 1, this.drawLength + 1);
             context.stroke();
@@ -353,18 +394,13 @@ class Board {
 }
 
 let canvas;
-let context;
 
 let currentBoard;
 let hostBoard;
 let opponentBoard;
 
-let gameFinished = false;
-
 let turn = 0;
 let turnPerPlayer = 10;
-
-let movingSquares = [];
 
 $(document).ready(function () {
     canvas = document.getElementById('game_canvas');
@@ -391,62 +427,82 @@ $(document).ready(function () {
 });
 
 $(document).keypress(function (evt) {
-    if(animationDate < new Date().getTime()){
-        if(gameFinished == false) {
-            let move = 0;
-            let dir = "";
-            let wasMoveKey = false;
-            switch(evt.key){
-                case "s" :
-                    move = 1;
-                    dir = "v";
-                    wasMoveKey = true;
-                break;
-                case "w" :
-                    move = -1;
-                    dir = "v";
-                    wasMoveKey = true;
-                break;
-                case "d" :
-                    move = 1;
-                    dir = "h";
-                    wasMoveKey = true;
-                break;
-                case "a" :
-                    move = -1;
-                    dir = "h";
-                    wasMoveKey = true;
-                break;
-            }
+    let move = 0;
+    let dir = "";
+    let wasMoveKey = false;
+    switch(evt.key){
+        case "s" :
+            move = 1;
+            dir = "v";
+            wasMoveKey = true;
+        break;
+        case "w" :
+            move = -1;
+            dir = "v";
+            wasMoveKey = true;
+        break;
+        case "d" :
+            move = 1;
+            dir = "h";
+            wasMoveKey = true;
+        break;
+        case "a" :
+            move = -1;
+            dir = "h";
+            wasMoveKey = true;
+        break;
+    }
+    
+    if(wasMoveKey) {
+        currentBoard.playTurn(move, dir, function() {
+
+            turn++;
+
+            let turnsRemaining;
             
-            if(wasMoveKey) {
-                if(currentBoard.moveSquares(move, dir) > 0){
-                    setTimeout(function(){
-                        currentBoard.spawnSquares(); 
-                        turn++;
-                        currentBoard = Math.floor(turn / turnPerPlayer) % 2 == 0 ? hostBoard : opponentBoard;
-        
-                        drawAll();
-        
-                        if(currentBoard.getHighestSquareValue() == 2048 || !currentBoard.hasMovableSquare()){
-                            gameFinished = true;
-                        }
-                    }, animationDate - new Date().getTime());
+            if(hostBoard.gameFinished == true){
+                turnsRemaining = hostBoard.turnsPlayed - opponentBoard.turnsPlayed;
+                currentBoard = opponentBoard;
+            } else if(opponentBoard.gameFinished == true){
+                turnsRemaining = opponentBoard.turnsPlayed - hostBoard.turnsPlayed;
+                currentBoard = hostBoard;
+            } else {
+                currentBoard = Math.floor(turn / turnPerPlayer) % 2 == 0 ? hostBoard : opponentBoard;
+            }
+
+            if(turnsRemaining != undefined){
+                if(turnsRemaining > 0){
+                    drawTurnsRemaining(turnsRemaining)
+                } else {
+                    currentBoard.gameFinished = true;
+                    alert("Game finished, winner is " + (hostBoard.getScore() > opponentBoard.getScore() ? "host" : "opponent") + "!");
                 }
             }
-        }
-        
-        if(gameFinished == true){
-            alert("Game finished, winner is " + (hostBoard.getScore() > opponentBoard.getScore() ? "host" : "opponent") + "!");
-        }
+            
+            drawAll();
+        })
     }
 });
 
+
 function drawAll(){
+    let context = canvas.getContext("2d");
     hostBoard.draw(context, hostBoard == currentBoard ? "green" : "red");
     opponentBoard.draw(context,  opponentBoard == currentBoard ? "green" : "red");
+}
 
-    for(let i=0; i<movingSquares.length; i++){
-        movingSquares[i].draw(context);
-    }
+function drawTurnsRemaining(turnsRemaining){
+    let context = canvas.getContext("2d");
+    let text = "Turns remaining : " + turnsRemaining;
+
+    let metrics = context.measureText(text);
+
+    context.clearRect(canvas.offsetWidth / 2 - metrics.width / 2 + 10, canvas.offsetHeight / 4, canvas.offsetWidth / 2 + metrics.width / 2 + 10, canvas.offsetHeight / 4 + 30);
+
+    context.textAlign = 'center';
+    context.textBaseline = 'top';
+    context.font = '20px Arial';
+    context.fillStyle = 'black';
+    context.fillText(text, canvas.offsetWidth / 2, canvas.offsetHeight / 4);
+
 }
