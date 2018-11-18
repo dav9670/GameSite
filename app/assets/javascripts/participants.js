@@ -20,14 +20,24 @@ Array.prototype.remove = function(object){
 class Square {
     constructor (value, drawLength, drawOffsetX, drawOffsetY) {
         //add showValue
-        this.value = value;
+        this.setValue(value);
         this.drawLength = drawLength;
         this.drawOffsetX = drawOffsetX;
         this.drawOffsetY = drawOffsetY;
     }
 
+    setValue(newValue){
+        this.value = newValue;
+        let colorValue = this.value == 0 ? tinycolor("white") : tinycolor("orange").lighten().lighten().lighten().lighten();
+        let boundary = Math.log2(this.value)
+        for(let i = 0; i < boundary; i++){
+            colorValue = colorValue.darken();
+        }
+        this.color = colorValue;
+    }
+
     absorb(targetSquare){
-        this.value += targetSquare.value;
+        this.setValue(this.value + targetSquare.value);
     }
 
     moveBy(moveX, moveY){
@@ -40,28 +50,19 @@ class Square {
         this.drawOffsetY = targetY;
     }
 
-    getColor(){
-        let colorValue = this.value == 0 ? tinycolor("white") : tinycolor("orange").lighten().lighten().lighten().lighten();
-        let boundary = Math.log2(this.value)
-        for(let i = 0; i < boundary; i++){
-            colorValue = colorValue.darken();
-        }
-        return colorValue;
-    }
-
     draw(context){
         context.clearRect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
 
         context.beginPath();
         context.rect(this.drawOffsetX, this.drawOffsetY, this.drawLength, this.drawLength);
-        context.fillStyle = this.getColor();
+        context.fillStyle = this.color;
         context.fill();
         context.stroke();
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.font = '20px Arial';
-        context.fillStyle = this.getColor().isDark() ? 'white' : 'black';
+        context.fillStyle = this.color.isDark() ? 'white' : 'black';
         context.fillText(this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
     }
 }
@@ -81,24 +82,12 @@ class Board {
             }
             this.grid[y] = column;
         }
+        this.score = 0;
         this.turnsPlayed = 0;
         this.gameFinished = false;
         this.movingSquares = [];
         this.nbAnimationSteps = 10;
         this.animationDate = new Date().getTime();
-    }
-
-    getScore(){
-        let total = 0;
-        for(let y = 0; y < this.nbSquares; y++){
-            for(let x = 0; x < this.nbSquares; x++){
-                let square = this.grid[y][x];
-                if(square){
-                    total += square.value;
-                }
-            }
-        }
-        return total;
     }
 
     getHighestSquareValue(){
@@ -170,6 +159,7 @@ class Board {
 
         if(this.grid[indexY][indexX]){
             this.grid[indexY][indexX].absorb(square);
+            this.score += this.grid[indexY][indexX].value;
         } else {
             this.grid[indexY][indexX] = square;
         }
@@ -356,7 +346,7 @@ class Board {
         context.textBaseline = 'top';
         context.font = '20px Arial';
         context.fillStyle = 'black';
-        context.fillText("Score : " + this.getScore(), this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY - 50, this.drawLength);
+        context.fillText("Score : " + this.score + ", Turn : " + this.turnsPlayed, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY - 50, this.drawLength);
 
         for (let y = 0; y < this.grid.length; y++) {
             for (let x = 0; x < this.grid[y].length; x++) {
@@ -475,7 +465,51 @@ $(document).keypress(function (evt) {
                     drawTurnsRemaining(turnsRemaining)
                 } else {
                     currentBoard.gameFinished = true;
-                    alert("Game finished, winner is " + (hostBoard.getScore() > opponentBoard.getScore() ? "host" : "opponent") + "!");
+                    
+                    let winner;
+                    let reason;
+
+                    let hostMovable = hostBoard.hasMovableSquare();
+                    let opponentMovable = opponentBoard.hasMovableSquare();
+
+                    let hostHighestSquare = hostBoard.getHighestSquareValue();
+                    let opponentHighestSquare = opponentBoard.getHighestSquareValue();
+
+                    let hostScore = hostBoard.score;
+                    let opponentScore = opponentBoard.score;
+
+                    //if the two finished being able to move or unable to move
+                    if(hostMovable == opponentMovable){
+                        if(hostHighestSquare == opponentHighestSquare){
+                            if(hostScore == opponentScore){
+                                //In last measure, give win to random instead of tie
+                                winner = Math.random() < 0.5 ? "host" : "opponent";
+                                reason = "I have to give the win to someone";
+                            } else if(hostScore > opponentScore) {
+                                winner = "host";
+                                reason = "host had higher score";
+                            } else if (opponentScore > hostScore){
+                                winner = "opponent";
+                                reason = "opponent had higher score";
+                            }
+
+                        } else if (hostHighestSquare > opponentHighestSquare){
+                            winner = "host";
+                            reason = "host had higher maximum square value";
+                        } else if (opponentHighestSquare > hostHighestSquare){
+                            winner = "opponent";
+                            reason = "opponent had higher maximum square value";
+                        }
+
+                    } else if(hostMovable){
+                        winner = "host";
+                        reason = "opponent was unable to move";
+                    } else if(opponentMovable){
+                        winner = "opponent";
+                        reason = "host was unable to move";
+                    }
+
+                    alert("Game finished, winner is " + winner + " because " + reason + ".");
                 }
             }
             
