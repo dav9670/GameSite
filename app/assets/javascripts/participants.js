@@ -461,7 +461,7 @@ $(document).keypress(function (evt) {
             }
 
             if(turnsRemaining != undefined){
-                if(turnsRemaining > 0 || (!hostBoard.gameFinished == true && !sopponentBoard.gameFinished == true)){
+                if(turnsRemaining > 0 || (!hostBoard.gameFinished && !sopponentBoard.gameFinished)){
                     drawTurnsRemaining(turnsRemaining);
                 } else {
                     currentBoard.gameFinished = true;
