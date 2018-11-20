@@ -22,3 +22,7 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+
+
+//JQuery Ajax
+//Protect from forgery except: :function

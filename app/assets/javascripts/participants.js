@@ -15,7 +15,7 @@ Array.prototype.remove = function(object){
             this.splice(i,1);
         }
     }
-}
+};
 
 class Square {
     constructor (value, drawLength, drawOffsetX, drawOffsetY) {
@@ -29,7 +29,7 @@ class Square {
     setValue(newValue){
         this.value = newValue;
         let colorValue = this.value == 0 ? tinycolor("white") : tinycolor("orange").lighten().lighten().lighten().lighten();
-        let boundary = Math.log2(this.value)
+        let boundary = Math.log2(this.value);
         for(let i = 0; i < boundary; i++){
             colorValue = colorValue.darken();
         }
@@ -461,8 +461,8 @@ $(document).keypress(function (evt) {
             }
 
             if(turnsRemaining != undefined){
-                if(turnsRemaining > 0){
-                    drawTurnsRemaining(turnsRemaining)
+                if(turnsRemaining > 0 || (!hostBoard.gameFinished == true && !sopponentBoard.gameFinished == true)){
+                    drawTurnsRemaining(turnsRemaining);
                 } else {
                     currentBoard.gameFinished = true;
                     
@@ -514,7 +514,7 @@ $(document).keypress(function (evt) {
             }
             
             drawAll();
-        })
+        });
     }
 });
 
