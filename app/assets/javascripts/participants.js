@@ -2,8 +2,6 @@
 // All this logic will automatically be available in application.js.
 // You can use CoffeeScript in this file: http://coffeescript.org/
 
-let frameRate = 60;
-
 Number.prototype.inRangeOf = function(other,range){
     range = Math.abs(range);
     return this >= other - range && this <= other + range;
@@ -279,7 +277,7 @@ class Board {
     }
 
     playTurn(move, dir, funcAfterTurn){
-        if(this.gameFinished == false && this.movingSquares.length == 0 && new Date().getTime() > currentBoard.animationDate + 50 && this.moveSquares(move, dir) > 0){
+        if(this.gameFinished == false && this.movingSquares.length == 0 && new Date().getTime() > this.animationDate + 50 && this.moveSquares(move, dir) > 0){
             this.moveSquareDraw(context);
             let self = this;
             setTimeout(function(){
@@ -383,37 +381,64 @@ class Board {
     }
 }
 
+class Game {
+    constructor(width, height){
+        this.hostBoard = new Board(width / 3, width / 15, height / 15 * 14 - (width / 3));
+        this.opponentBoard = new Board(width / 3, width / 15 * 14 - (width / 3), height / 15 * 14 - (width / 3));
+
+        this.turn = 0;
+        this.turnPerPlayer = 10;
+
+        this.hostBoard.spawnSquares(2);
+        this.opponentBoard.spawnSquares(2);
+    }
+
+    drawAll(){
+        let context = canvas.getContext("2d");
+        this.hostBoard.draw(context, this.hostBoard == currentBoard ? "green" : "red");
+        this.opponentBoard.draw(context,  this.opponentBoard == currentBoard ? "green" : "red");
+    }
+
+    drawTurnsRemaining(turnsRemaining){
+        let context = canvas.getContext("2d");
+        let text = "Turns remaining : " + turnsRemaining;
+
+        let metrics = context.measureText(text);
+
+        context.clearRect(canvas.offsetWidth / 2 - metrics.width / 2 + 10, canvas.offsetHeight / 4, canvas.offsetWidth / 2 + metrics.width / 2 + 10, canvas.offsetHeight / 4 + 30);
+
+        context.textAlign = 'center';
+        context.textBaseline = 'top';
+        context.font = '20px Arial';
+        context.fillStyle = 'black';
+        context.fillText(text, canvas.offsetWidth / 2, canvas.offsetHeight / 4);
+
+    }
+
+    reconstruct(json){
+        
+    }
+}
+
 let canvas;
 
-let currentBoard;
-let hostBoard;
-let opponentBoard;
+let game;
 
-let turn = 0;
-let turnPerPlayer = 10;
+let currentBoard;
+
+let frameRate = 60;
 
 $(document).ready(function () {
     canvas = document.getElementById('game_canvas');
     context = canvas.getContext('2d');
 
-    hostBoard = new Board(canvas.offsetWidth / 3, canvas.offsetWidth / 15, canvas.offsetHeight / 15 * 14 - (canvas.offsetWidth / 3));
-    opponentBoard = new Board(canvas.offsetWidth / 3, canvas.offsetWidth / 15 * 14 - (canvas.offsetWidth / 3), canvas.offsetHeight / 15 * 14 - (canvas.offsetWidth / 3));
+    game = new Game(canvas.offsetWidth, canvas.offsetHeight);
 
-    hostBoard.spawnSquares(2);
-    opponentBoard.spawnSquares(2);
+    currentBoard = game.hostBoard;
 
-    currentBoard = hostBoard;
+    game.drawAll();
 
-    drawAll();
-
-    canvas.addEventListener('mousedown', function (event) {
-        let rect = canvas.getBoundingClientRect();
-        let x = event.clientX - rect.left;
-        let y = event.clientY - rect.top;
-        
-        console.log("currentBoard : " + currentBoard.indexOf(x,y));
-        console.log("opponentBoard : " + opponentBoard.indexOf(x,y));
-    });
+    uploadGameData();
 });
 
 $(document).keypress(function (evt) {
@@ -446,37 +471,37 @@ $(document).keypress(function (evt) {
     if(wasMoveKey) {
         currentBoard.playTurn(move, dir, function() {
 
-            turn++;
+            game.turn++;
 
             let turnsRemaining;
             
-            if(hostBoard.gameFinished == true){
-                turnsRemaining = hostBoard.turnsPlayed - opponentBoard.turnsPlayed;
-                currentBoard = opponentBoard;
-            } else if(opponentBoard.gameFinished == true){
-                turnsRemaining = opponentBoard.turnsPlayed - hostBoard.turnsPlayed;
-                currentBoard = hostBoard;
+            if(game.hostBoard.gameFinished == true){
+                turnsRemaining = game.hostBoard.turnsPlayed - game.opponentBoard.turnsPlayed;
+                currentBoard = game.opponentBoard;
+            } else if(game.opponentBoard.gameFinished == true){
+                turnsRemaining = game.opponentBoard.turnsPlayed - game.hostBoard.turnsPlayed;
+                currentBoard = game.hostBoard;
             } else {
-                currentBoard = Math.floor(turn / turnPerPlayer) % 2 == 0 ? hostBoard : opponentBoard;
+                currentBoard = Math.floor(game.turn / game.turnPerPlayer) % 2 == 0 ? game.hostBoard : game.opponentBoard;
             }
 
             if(turnsRemaining != undefined){
-                if(turnsRemaining > 0 || (!hostBoard.gameFinished && !sopponentBoard.gameFinished)){
-                    drawTurnsRemaining(turnsRemaining);
+                if(turnsRemaining > 0 || (!game.hostBoard.gameFinished && !game.opponentBoard.gameFinished)){
+                    game.drawTurnsRemaining(turnsRemaining);
                 } else {
                     currentBoard.gameFinished = true;
                     
                     let winner;
                     let reason;
 
-                    let hostMovable = hostBoard.hasMovableSquare();
-                    let opponentMovable = opponentBoard.hasMovableSquare();
+                    let hostMovable = game.hostBoard.hasMovableSquare();
+                    let opponentMovable = game.opponentBoard.hasMovableSquare();
 
-                    let hostHighestSquare = hostBoard.getHighestSquareValue();
-                    let opponentHighestSquare = opponentBoard.getHighestSquareValue();
+                    let hostHighestSquare = game.hostBoard.getHighestSquareValue();
+                    let opponentHighestSquare = game.opponentBoard.getHighestSquareValue();
 
-                    let hostScore = hostBoard.score;
-                    let opponentScore = opponentBoard.score;
+                    let hostScore = game.hostBoard.score;
+                    let opponentScore = game.opponentBoard.score;
 
                     //if the two finished being able to move or unable to move
                     if(hostMovable == opponentMovable){
@@ -513,30 +538,29 @@ $(document).keypress(function (evt) {
                 }
             }
             
-            drawAll();
+            game.drawAll();
+            uploadGameData();
         });
     }
 });
 
-
-function drawAll(){
-    let context = canvas.getContext("2d");
-    hostBoard.draw(context, hostBoard == currentBoard ? "green" : "red");
-    opponentBoard.draw(context,  opponentBoard == currentBoard ? "green" : "red");
-}
-
-function drawTurnsRemaining(turnsRemaining){
-    let context = canvas.getContext("2d");
-    let text = "Turns remaining : " + turnsRemaining;
-
-    let metrics = context.measureText(text);
-
-    context.clearRect(canvas.offsetWidth / 2 - metrics.width / 2 + 10, canvas.offsetHeight / 4, canvas.offsetWidth / 2 + metrics.width / 2 + 10, canvas.offsetHeight / 4 + 30);
-
-    context.textAlign = 'center';
-    context.textBaseline = 'top';
-    context.font = '20px Arial';
-    context.fillStyle = 'black';
-    context.fillText(text, canvas.offsetWidth / 2, canvas.offsetHeight / 4);
-
+function uploadGameData(){
+    $.ajax({
+        method: "PUT",
+        url: window.location.pathname + ".json",
+        data: { 
+            participant: { 
+                game_data: JSON.stringify(game)
+            } 
+        }
+    })
+    .done(function() {
+        $.ajax({
+            method: "GET",
+            url: window.location.pathname + ".json"
+        })
+        .done(function(json){
+            Object.assign(game, JSON.parse(json.game_data));
+        });
+    });
 }

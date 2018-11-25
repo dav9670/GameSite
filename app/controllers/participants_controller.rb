@@ -1,4 +1,5 @@
 class ParticipantsController < ApplicationController
+  protect_from_forgery except: :update
   before_action :set_participant, only: [:destroy]
 
   # GET /participants
@@ -13,6 +14,10 @@ class ParticipantsController < ApplicationController
   def show
     @game = Game.find(params[:game_id])
     @participant = Participant.find(params[:participant_id])
+    respond_to do |format|
+      format.html
+      format.json { render json: @participant }
+    end
   end
 
   # POST /participants
@@ -38,8 +43,10 @@ class ParticipantsController < ApplicationController
     respond_to do |format|
       if participant.update(participant_params)
         format.html { redirect_to show_participant_path(game, participant) }
+        format.json
       else
         format.html { render :edit }
+        format.json
       end
     end
   end
