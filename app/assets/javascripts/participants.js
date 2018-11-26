@@ -63,10 +63,15 @@ class Square {
         context.fillStyle = this.color.isDark() ? 'white' : 'black';
         context.fillText(this.value, this.drawOffsetX + (this.drawLength / 2), this.drawOffsetY + (this.drawLength / 2), this.drawLength);
     }
+
+    setPrototypes(){
+        this.color = Object.setPrototypeOf(this.color, tinycolor.prototype);
+    }
 }
 
 class Board {
-    constructor (drawLength, drawOffsetX, drawOffsetY) {
+    constructor (playerId, drawLength, drawOffsetX, drawOffsetY) {
+        this.playerId = playerId;
         this.drawLength = drawLength;
         this.drawOffsetX = drawOffsetX;
         this.drawOffsetY = drawOffsetY;
@@ -278,9 +283,8 @@ class Board {
 
     playTurn(move, dir, funcAfterTurn){
         if(this.gameFinished == false && this.movingSquares.length == 0 && new Date().getTime() > this.animationDate + 50 && this.moveSquares(move, dir) > 0){
-            this.moveSquareDraw(context);
             let self = this;
-            setTimeout(function(){
+            this.moveSquareDraw(context, function() {
                 self.spawnSquares();
                 
                 if(self.getHighestSquareValue() >= 2048 || !self.hasMovableSquare()){
@@ -290,8 +294,7 @@ class Board {
                 self.draw(canvas.getContext("2d"), self == currentBoard ? "green" : "red");
 
                 funcAfterTurn();
-
-            }, this.animationDate - new Date().getTime());
+            });
             this.turnsPlayed++;
 
             return true;
@@ -311,7 +314,7 @@ class Board {
         return null;
     }
 
-    moveSquareDraw(context){
+    moveSquareDraw(context, endfunc){
         for(let i=0; i<this.movingSquares.length; i++){
             let squareInfos = this.movingSquares[i];
             let square = squareInfos.square;
@@ -332,7 +335,9 @@ class Board {
         let self = this;
 
         if(this.movingSquares.length > 0){
-            setTimeout(function(){self.moveSquareDraw(context);}, 1000 / frameRate);
+            setTimeout(function(){self.moveSquareDraw(context, endfunc);}, 1000 / frameRate);
+        } else {
+            endfunc();
         }
     }
 
@@ -379,12 +384,25 @@ class Board {
             context.strokeStyle = "black";
         }
     }
+
+    setPrototypes(){
+        for(let y=0; y<this.nbSquares; y++){
+            for(let x=0; x<this.nbSquares; x++){
+                if(this.grid[y][x] != null){
+                    this.grid[y][x] = Object.setPrototypeOf(this.grid[y][x], Square.prototype);
+                    this.grid[y][x].setPrototypes();
+                }
+            }
+        }
+
+        this.movingSquares = [];
+    }
 }
 
 class Game {
-    constructor(width, height){
-        this.hostBoard = new Board(width / 3, width / 15, height / 15 * 14 - (width / 3));
-        this.opponentBoard = new Board(width / 3, width / 15 * 14 - (width / 3), height / 15 * 14 - (width / 3));
+    constructor(hostId, opponentId, width, height){
+        this.hostBoard = new Board(hostId, width / 3, width / 15, height / 15 * 14 - (width / 3));
+        this.opponentBoard = new Board(opponentId, width / 3, width / 15 * 14 - (width / 3), height / 15 * 14 - (width / 3));
 
         this.turn = 0;
         this.turnPerPlayer = 10;
@@ -415,152 +433,212 @@ class Game {
 
     }
 
-    reconstruct(json){
-        
+    setPrototypes(){
+        this.hostBoard = Object.setPrototypeOf(this.hostBoard, Board.prototype);
+        this.hostBoard.setPrototypes();
+        this.opponentBoard = Object.setPrototypeOf(this.opponentBoard, Board.prototype);
+        this.opponentBoard.setPrototypes();
     }
 }
 
 let canvas;
+let context;
 
-let game;
+let game = Object();
 
 let currentBoard;
 
 let frameRate = 60;
 
 $(document).ready(function () {
+
     canvas = document.getElementById('game_canvas');
     context = canvas.getContext('2d');
 
-    game = new Game(canvas.offsetWidth, canvas.offsetHeight);
+    login();
 
-    currentBoard = game.hostBoard;
-
-    game.drawAll();
-
-    uploadGameData();
+    let userId = Cookies.get("user");
 });
 
 $(document).keypress(function (evt) {
-    let move = 0;
-    let dir = "";
-    let wasMoveKey = false;
-    switch(evt.key){
-        case "s" :
-            move = 1;
-            dir = "v";
-            wasMoveKey = true;
-        break;
-        case "w" :
-            move = -1;
-            dir = "v";
-            wasMoveKey = true;
-        break;
-        case "d" :
-            move = 1;
-            dir = "h";
-            wasMoveKey = true;
-        break;
-        case "a" :
-            move = -1;
-            dir = "h";
-            wasMoveKey = true;
-        break;
-    }
-    
-    if(wasMoveKey) {
-        currentBoard.playTurn(move, dir, function() {
+    if(currentBoard.playerId == Cookies.get("user")){
+        let move = 0;
+        let dir = "";
+        let wasMoveKey = false;
+        switch(evt.key){
+            case "s" :
+                move = 1;
+                dir = "v";
+                wasMoveKey = true;
+            break;
+            case "w" :
+                move = -1;
+                dir = "v";
+                wasMoveKey = true;
+            break;
+            case "d" :
+                move = 1;
+                dir = "h";
+                wasMoveKey = true;
+            break;
+            case "a" :
+                move = -1;
+                dir = "h";
+                wasMoveKey = true;
+            break;
+        }
+        
+        if(wasMoveKey) {
+            currentBoard.playTurn(move, dir, function() {
 
-            game.turn++;
+                game.turn++;
 
-            let turnsRemaining;
-            
-            if(game.hostBoard.gameFinished == true){
-                turnsRemaining = game.hostBoard.turnsPlayed - game.opponentBoard.turnsPlayed;
-                currentBoard = game.opponentBoard;
-            } else if(game.opponentBoard.gameFinished == true){
-                turnsRemaining = game.opponentBoard.turnsPlayed - game.hostBoard.turnsPlayed;
-                currentBoard = game.hostBoard;
-            } else {
-                currentBoard = Math.floor(game.turn / game.turnPerPlayer) % 2 == 0 ? game.hostBoard : game.opponentBoard;
-            }
-
-            if(turnsRemaining != undefined){
-                if(turnsRemaining > 0 || (!game.hostBoard.gameFinished && !game.opponentBoard.gameFinished)){
-                    game.drawTurnsRemaining(turnsRemaining);
+                let turnsRemaining;
+                
+                if(game.hostBoard.gameFinished == true){
+                    turnsRemaining = game.hostBoard.turnsPlayed - game.opponentBoard.turnsPlayed;
+                    currentBoard = game.opponentBoard;
+                } else if(game.opponentBoard.gameFinished == true){
+                    turnsRemaining = game.opponentBoard.turnsPlayed - game.hostBoard.turnsPlayed;
+                    currentBoard = game.hostBoard;
                 } else {
-                    currentBoard.gameFinished = true;
-                    
-                    let winner;
-                    let reason;
+                    currentBoard = Math.floor(game.turn / game.turnPerPlayer) % 2 == 0 ? game.hostBoard : game.opponentBoard;
+                }
 
-                    let hostMovable = game.hostBoard.hasMovableSquare();
-                    let opponentMovable = game.opponentBoard.hasMovableSquare();
+                if(turnsRemaining != undefined){
+                    if(turnsRemaining > 0 || (!game.hostBoard.gameFinished && !game.opponentBoard.gameFinished)){
+                        game.drawTurnsRemaining(turnsRemaining);
+                    } else {
+                        currentBoard.gameFinished = true;
+                        
+                        let winner;
+                        let reason;
 
-                    let hostHighestSquare = game.hostBoard.getHighestSquareValue();
-                    let opponentHighestSquare = game.opponentBoard.getHighestSquareValue();
+                        let hostMovable = game.hostBoard.hasMovableSquare();
+                        let opponentMovable = game.opponentBoard.hasMovableSquare();
 
-                    let hostScore = game.hostBoard.score;
-                    let opponentScore = game.opponentBoard.score;
+                        let hostHighestSquare = game.hostBoard.getHighestSquareValue();
+                        let opponentHighestSquare = game.opponentBoard.getHighestSquareValue();
 
-                    //if the two finished being able to move or unable to move
-                    if(hostMovable == opponentMovable){
-                        if(hostHighestSquare == opponentHighestSquare){
-                            if(hostScore == opponentScore){
-                                //In last measure, give win to random instead of tie
-                                winner = Math.random() < 0.5 ? "host" : "opponent";
-                                reason = "I have to give the win to someone";
-                            } else if(hostScore > opponentScore) {
+                        let hostScore = game.hostBoard.score;
+                        let opponentScore = game.opponentBoard.score;
+
+                        //if the two finished being able to move or unable to move
+                        if(hostMovable == opponentMovable){
+                            if(hostHighestSquare == opponentHighestSquare){
+                                if(hostScore == opponentScore){
+                                    //In last measure, give win to random instead of tie
+                                    winner = Math.random() < 0.5 ? "host" : "opponent";
+                                    reason = "I have to give the win to someone";
+                                } else if(hostScore > opponentScore) {
+                                    winner = "host";
+                                    reason = "host had higher score";
+                                } else if (opponentScore > hostScore){
+                                    winner = "opponent";
+                                    reason = "opponent had higher score";
+                                }
+
+                            } else if (hostHighestSquare > opponentHighestSquare){
                                 winner = "host";
-                                reason = "host had higher score";
-                            } else if (opponentScore > hostScore){
+                                reason = "host had higher maximum square value";
+                            } else if (opponentHighestSquare > hostHighestSquare){
                                 winner = "opponent";
-                                reason = "opponent had higher score";
+                                reason = "opponent had higher maximum square value";
                             }
 
-                        } else if (hostHighestSquare > opponentHighestSquare){
+                        } else if(hostMovable){
                             winner = "host";
-                            reason = "host had higher maximum square value";
-                        } else if (opponentHighestSquare > hostHighestSquare){
+                            reason = "opponent was unable to move";
+                        } else if(opponentMovable){
                             winner = "opponent";
-                            reason = "opponent had higher maximum square value";
+                            reason = "host was unable to move";
                         }
 
-                    } else if(hostMovable){
-                        winner = "host";
-                        reason = "opponent was unable to move";
-                    } else if(opponentMovable){
-                        winner = "opponent";
-                        reason = "host was unable to move";
+                        alert("Game finished, winner is " + winner + " because " + reason + ".");
                     }
-
-                    alert("Game finished, winner is " + winner + " because " + reason + ".");
                 }
-            }
-            
-            game.drawAll();
-            uploadGameData();
-        });
+                
+                game.drawAll();
+                uploadGameData();
+
+                if(currentBoard.playerId != Cookies.get("user")){
+                    setTimeout(function() {queryGame();}, 2000);
+                }
+            });
+        }
     }
 });
+
+function getParticipant(callback){
+    $.ajax({
+        method: "GET",
+        url: window.location.pathname + ".json"
+    })
+    .done(function(json){
+        if(json.game_data != ""){
+            json.game_data = JSON.parse(json.game_data);
+        }
+        callback(json);
+    });
+}
 
 function uploadGameData(){
     $.ajax({
         method: "PUT",
         url: window.location.pathname + ".json",
         data: { 
-            participant: { 
+            participant: {
+                waiting_for_user_id: currentBoard.playerId,
                 game_data: JSON.stringify(game)
             } 
         }
     })
-    .done(function() {
-        $.ajax({
-            method: "GET",
-            url: window.location.pathname + ".json"
-        })
-        .done(function(json){
-            Object.assign(game, JSON.parse(json.game_data));
-        });
-    });
+}
+
+function login() {
+    getParticipant(function(json) {
+        if(json.opponent_id == null){
+
+            context.textAlign = 'center';
+            context.textBaseline = 'top';
+            context.font = '20px Arial';
+            context.fillStyle = 'black';
+            context.fillText("Can't play until opponent has joined", canvas.offsetWidth / 2, canvas.offsetHeight / 2);
+
+            setTimeout(function() { login() }, 1000)
+        } else {
+            context.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+            if(json.game_data == ""){
+                game = new Game(json.owner_id, json.opponent_id, canvas.offsetWidth, canvas.offsetHeight);
+
+                currentBoard = game.hostBoard;
+
+                game.drawAll();
+
+                uploadGameData();
+            } else {
+                updateGame(json)
+            }
+        }
+    })
+}
+
+function queryGame(){
+    getParticipant(function(json) {
+        updateGame(json);
+    })
+}
+
+function updateGame(json){
+    Object.assign(game, json.game_data);
+    game = Object.setPrototypeOf(game, Game.prototype);
+    game.setPrototypes();
+    
+    currentBoard = json.waiting_for_user_id == game.hostBoard.playerId ? game.hostBoard : game.opponentBoard;
+
+    game.drawAll();
+    
+    if(currentBoard.playerId != Cookies.get("user")){
+        setTimeout(function() {queryGame();}, 1000);
+    }
 }

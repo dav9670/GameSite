@@ -1,6 +1,7 @@
 class ParticipantsController < ApplicationController
   protect_from_forgery except: :update
   before_action :set_participant, only: [:destroy]
+  before_action :set_user, only:[:show]
 
   # GET /participants
   # GET /participants.json
@@ -64,6 +65,10 @@ class ParticipantsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_participant
       @participant = Participant.find(params[:id])
+    end
+
+    def set_user
+      cookies[:user] = current_user.id
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.
