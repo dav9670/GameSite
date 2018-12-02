@@ -407,23 +407,32 @@ class Game {
         this.turn = 0;
         this.turnPerPlayer = 10;
 
+        this.turnsRemaining = null;
+
         this.hostBoard.spawnSquares(2);
         this.opponentBoard.spawnSquares(2);
     }
 
     drawAll(){
         let context = canvas.getContext("2d");
+
+        context.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+        
         this.hostBoard.draw(context, this.hostBoard == currentBoard ? "green" : "red");
         this.opponentBoard.draw(context,  this.opponentBoard == currentBoard ? "green" : "red");
+
+        if(this.turnsRemaining){
+            this.drawTurnsRemaining();
+        }
     }
 
-    drawTurnsRemaining(turnsRemaining){
+    drawTurnsRemaining(){
         let context = canvas.getContext("2d");
-        let text = "Turns remaining : " + turnsRemaining;
+        let text = "Turns remaining : " + this.turnsRemaining;
 
         let metrics = context.measureText(text);
 
-        context.clearRect(canvas.offsetWidth / 2 - metrics.width / 2 + 10, canvas.offsetHeight / 4, canvas.offsetWidth / 2 + metrics.width / 2 + 10, canvas.offsetHeight / 4 + 30);
+        context.clearRect((canvas.offsetWidth / 2) - (metrics.width / 2), (canvas.offsetHeight / 4), metrics.width, 15);
 
         context.textAlign = 'center';
         context.textBaseline = 'top';
@@ -442,7 +451,11 @@ class Game {
 }
 
 let canvas;
+let names_title;
+
 let context;
+
+let currentUser = Cookies.get("user");
 
 let game = Object();
 
@@ -453,118 +466,73 @@ let frameRate = 60;
 $(document).ready(function () {
 
     canvas = document.getElementById('game_canvas');
+    names_title = document.getElementById('names_title');
+
+
     context = canvas.getContext('2d');
 
     login();
-
-    let userId = Cookies.get("user");
 });
 
 $(document).keypress(function (evt) {
-    if(currentBoard.playerId == Cookies.get("user")){
-        let move = 0;
-        let dir = "";
-        let wasMoveKey = false;
-        switch(evt.key){
-            case "s" :
-                move = 1;
-                dir = "v";
-                wasMoveKey = true;
-            break;
-            case "w" :
-                move = -1;
-                dir = "v";
-                wasMoveKey = true;
-            break;
-            case "d" :
-                move = 1;
-                dir = "h";
-                wasMoveKey = true;
-            break;
-            case "a" :
-                move = -1;
-                dir = "h";
-                wasMoveKey = true;
-            break;
-        }
-        
-        if(wasMoveKey) {
-            currentBoard.playTurn(move, dir, function() {
-
-                game.turn++;
-
-                let turnsRemaining;
-                
-                if(game.hostBoard.gameFinished == true){
-                    turnsRemaining = game.hostBoard.turnsPlayed - game.opponentBoard.turnsPlayed;
-                    currentBoard = game.opponentBoard;
-                } else if(game.opponentBoard.gameFinished == true){
-                    turnsRemaining = game.opponentBoard.turnsPlayed - game.hostBoard.turnsPlayed;
-                    currentBoard = game.hostBoard;
-                } else {
-                    currentBoard = Math.floor(game.turn / game.turnPerPlayer) % 2 == 0 ? game.hostBoard : game.opponentBoard;
-                }
-
-                if(turnsRemaining != undefined){
-                    if(turnsRemaining > 0 || (!game.hostBoard.gameFinished && !game.opponentBoard.gameFinished)){
-                        game.drawTurnsRemaining(turnsRemaining);
-                    } else {
-                        currentBoard.gameFinished = true;
-                        
-                        let winner;
-                        let reason;
-
-                        let hostMovable = game.hostBoard.hasMovableSquare();
-                        let opponentMovable = game.opponentBoard.hasMovableSquare();
-
-                        let hostHighestSquare = game.hostBoard.getHighestSquareValue();
-                        let opponentHighestSquare = game.opponentBoard.getHighestSquareValue();
-
-                        let hostScore = game.hostBoard.score;
-                        let opponentScore = game.opponentBoard.score;
-
-                        //if the two finished being able to move or unable to move
-                        if(hostMovable == opponentMovable){
-                            if(hostHighestSquare == opponentHighestSquare){
-                                if(hostScore == opponentScore){
-                                    //In last measure, give win to random instead of tie
-                                    winner = Math.random() < 0.5 ? "host" : "opponent";
-                                    reason = "I have to give the win to someone";
-                                } else if(hostScore > opponentScore) {
-                                    winner = "host";
-                                    reason = "host had higher score";
-                                } else if (opponentScore > hostScore){
-                                    winner = "opponent";
-                                    reason = "opponent had higher score";
-                                }
-
-                            } else if (hostHighestSquare > opponentHighestSquare){
-                                winner = "host";
-                                reason = "host had higher maximum square value";
-                            } else if (opponentHighestSquare > hostHighestSquare){
-                                winner = "opponent";
-                                reason = "opponent had higher maximum square value";
-                            }
-
-                        } else if(hostMovable){
-                            winner = "host";
-                            reason = "opponent was unable to move";
-                        } else if(opponentMovable){
-                            winner = "opponent";
-                            reason = "host was unable to move";
-                        }
-
-                        alert("Game finished, winner is " + winner + " because " + reason + ".");
+    if(currentBoard){
+        if(currentBoard.playerId == currentUser){
+            let move = 0;
+            let dir = "";
+            let wasMoveKey = false;
+            switch(evt.key){
+                case "s" :
+                    move = 1;
+                    dir = "v";
+                    wasMoveKey = true;
+                break;
+                case "w" :
+                    move = -1;
+                    dir = "v";
+                    wasMoveKey = true;
+                break;
+                case "d" :
+                    move = 1;
+                    dir = "h";
+                    wasMoveKey = true;
+                break;
+                case "a" :
+                    move = -1;
+                    dir = "h";
+                    wasMoveKey = true;
+                break;
+            }
+            
+            if(wasMoveKey) {
+                currentBoard.playTurn(move, dir, function() {
+    
+                    game.turn++;
+                    
+                    if(!game.hostBoard.gameFinished && !game.opponentBoard.gameFinished){
+                        currentBoard = Math.floor(game.turn / game.turnPerPlayer) % 2 == 0 ? game.hostBoard : game.opponentBoard;
+                    } else if(game.hostBoard.gameFinished){
+                        game.turnsRemaining = game.hostBoard.turnsPlayed - game.opponentBoard.turnsPlayed;
+                        currentBoard = game.opponentBoard;
+                    } else if(game.opponentBoard.gameFinished){
+                        game.turnsRemaining = game.opponentBoard.turnsPlayed - game.hostBoard.turnsPlayed;
+                        currentBoard = game.hostBoard;
                     }
-                }
-                
-                game.drawAll();
-                uploadGameData();
-
-                if(currentBoard.playerId != Cookies.get("user")){
-                    setTimeout(function() {queryGame();}, 2000);
-                }
-            });
+    
+                    if(game.turnsRemaining != null){
+                        if((game.hostBoard.gameFinished && game.opponentBoard.gameFinished) || game.turnsRemaining == 0){
+                            currentBoard.gameFinished = true;
+                            endGame();
+                        }
+                    }
+                    
+                    game.drawAll();
+                    putParticipant("playing");
+    
+                    if(currentBoard.playerId != currentUser){
+                        setTimeout(function() {queryGame();}, 2000);
+                    }
+                });
+            }
         }
     }
 });
@@ -582,22 +550,67 @@ function getParticipant(callback){
     });
 }
 
-function uploadGameData(){
+function putParticipant(status, winner_id = ""){
     $.ajax({
         method: "PUT",
         url: window.location.pathname + ".json",
         data: { 
             participant: {
+                winner_id: winner_id,
+                status: status,
                 waiting_for_user_id: currentBoard.playerId,
                 game_data: JSON.stringify(game)
             } 
         }
+    });
+}
+
+function getName(playerId, callback){
+    $.ajax({
+        method: "GET",
+        url: "/users/" + playerId + "/name" + ".json",
+        dataType: "text"
     })
+    .done(function(json){
+        callback(json);
+    });
+}
+
+function queryGame(){
+    getParticipant(function(json) {
+        Object.assign(game, json.game_data);
+        game = Object.setPrototypeOf(game, Game.prototype);
+        game.setPrototypes();
+        
+        currentBoard = json.waiting_for_user_id == game.hostBoard.playerId ? game.hostBoard : game.opponentBoard;
+
+        game.drawAll();
+        
+        if(json.status == "ended"){
+            getName(json.winner_id, function(name) {
+                alert("Player " + name + " won the game.");
+            });
+        } else if(currentBoard.playerId != currentUser){
+            setTimeout(function() {queryGame();}, 1000);
+        }
+    });
+}
+
+function setNames(){
+    getName(game.hostBoard.playerId, function(name) {
+        let hostName = name;
+        getName(game.opponentBoard.playerId, function(name) {
+            let opponentName = name;
+            names_title.innerHTML = "Host : " + hostName + ", Opponent : " + opponentName;
+        });
+    });
 }
 
 function login() {
     getParticipant(function(json) {
         if(json.opponent_id == null){
+
+            context.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
             context.textAlign = 'center';
             context.textBaseline = 'top';
@@ -607,7 +620,6 @@ function login() {
 
             setTimeout(function() { login() }, 1000)
         } else {
-            context.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
             if(json.game_data == ""){
                 game = new Game(json.owner_id, json.opponent_id, canvas.offsetWidth, canvas.offsetHeight);
 
@@ -615,30 +627,39 @@ function login() {
 
                 game.drawAll();
 
-                uploadGameData();
+                putParticipant("playing");
+                if(currentBoard.playerId != currentUser){
+                    queryGame(json);
+                }
+
+                setNames();
+
             } else {
-                updateGame(json)
+                queryGame(json);
             }
         }
     })
 }
 
-function queryGame(){
-    getParticipant(function(json) {
-        updateGame(json);
-    })
-}
+function endGame(){     
+    let winner;
 
-function updateGame(json){
-    Object.assign(game, json.game_data);
-    game = Object.setPrototypeOf(game, Game.prototype);
-    game.setPrototypes();
-    
-    currentBoard = json.waiting_for_user_id == game.hostBoard.playerId ? game.hostBoard : game.opponentBoard;
-
-    game.drawAll();
-    
-    if(currentBoard.playerId != Cookies.get("user")){
-        setTimeout(function() {queryGame();}, 1000);
+    //if the two finished being able to move or unable to move
+    if(game.hostBoard.hasMovableSquare() == game.opponentBoard.hasMovableSquare()){
+        if(game.hostBoard.getHighestSquareValue() == game.opponentBoard.getHighestSquareValue()){
+            if(game.hostBoard.score == game.opponentBoard.score){
+                //In last measure, give win to random instead of tie
+                winner = Math.random() < 0.5 ? game.hostBoard.playerId : game.opponentBoard.playerId;
+            } else {
+                winner = game.hostBoard.score > game.opponentBoard.score ? game.hostBoard.playerId : game.opponentBoard.playerId;
+            }
+        } else {
+            winner = game.hostBoard.getHighestSquareValue() > game.opponentBoard.getHighestSquareValue() ? game.hostBoard.playerId : game.opponentBoard.playerId;
+        }
+    } else {
+        winner = game.hostBoard.hasMovableSquare() ? game.hostBoard.playerId : game.opponentBoard.playerId;
     }
+
+    putParticipant("ended", winner);
+    setTimeout(function() {queryGame();}, 2000);
 }

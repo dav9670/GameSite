@@ -1,8 +1,12 @@
 # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
 Rails.application.routes.draw do
-  devise_for :users
 
   root to: "games#index"
+
+  # Users
+  devise_for :users
+  get '/users/:id/name', to: 'statistics#get_name', as: 'get_user_name'
+
 
   # Games
   get '/games', to: 'games#index', as: 'games'
@@ -12,7 +16,7 @@ Rails.application.routes.draw do
   get '/games/:game_id/participants/:participant_id', to: 'participants#show', as: 'show_participant'
   post '/games/:game_id/participants', to: 'participants#create', as: 'create_participant'
   put '/games/:game_id/participants/:participant_id', to: 'participants#update', as: 'update_participant'
-  delete '/participants/:id', to: 'participants#destroy', as: 'destroy_participant'
+  delete '/participants/:id', to: 'participants#quit', as: 'quit_participant'
   
   # Relationships
   get '/users/relationships', to: 'relationships#index', as: 'relationships'

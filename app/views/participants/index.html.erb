@@ -17,7 +17,7 @@
   <tbody>
     <% @participants.each do |participant| %>
       <tr>
-        <td><%= participant.owner %></td>
+        <td><%= participant.owner.name %></td>
         <td><%= link_to 'Join', update_participant_path(@game, participant, :participant => {:opponent_id => current_user, :owner_id => participant.owner_id, :game_id => participant.game_id, :winner_id => nil, :waiting_for_user_id => participant.owner, :status => "waiting", :game_data => nil}), method: :PUT, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>

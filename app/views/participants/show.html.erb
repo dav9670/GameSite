@@ -4,8 +4,8 @@
 
 <h2><%= @game %></h2>
 
-<h3>Host : <%= @participant.owner %>, Opponent : <%= @participant.opponent %></h3>
+<h3 id="names_title">Host : <%= @participant.owner.name %>, Opponent : <%= @participant.opponent != nil ? @participant.opponent.name : "" %></h3>
 
 <canvas id="game_canvas" width="1200" height="600" style="border-style: solid; border-width: 2px;"></canvas>
 
-<%= link_to 'Quit game', destroy_participant_path(@participant), method: :delete, data: { confirm: 'Are you sure?' } %><br/>
+<%= link_to 'Quit game', quit_participant_path(@participant), method: :delete, data: { confirm: 'Are you sure?' } %><br/>

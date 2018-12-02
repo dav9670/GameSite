@@ -1,6 +1,6 @@
 class ParticipantsController < ApplicationController
   protect_from_forgery except: :update
-  before_action :set_participant, only: [:destroy]
+  before_action :set_participant, only: [:destroy, :quit]
   before_action :set_user, only:[:show]
 
   # GET /participants
@@ -59,6 +59,18 @@ class ParticipantsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to root_path, notice: 'Participant was successfully destroyed.' }
     end
+  end
+
+  def quit
+    if @participant.winner_id == nil
+      other_user = @participant.owner_id != current_user.id ? @participant.owner_id : @participant.opponent_id
+      if other_user != nil
+        @participant.update(winner_id: other_user, status: "ended") 
+      else
+        @participant.destroy
+      end
+    end
+    redirect_to root_path
   end
 
   private
