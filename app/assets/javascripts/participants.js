@@ -358,8 +358,11 @@ class Board {
                 let startY = y * sLength + this.drawOffsetY;
 
                 context.beginPath();
+                context.strokeStyle = "black";
+                //context.fillStyle = outlineColor;
                 context.rect(startX, startY, sLength, sLength);
                 context.stroke();
+                //context.fill();
 
                 let square = this.grid[y][x];
                 if(square){
@@ -417,7 +420,7 @@ class Game {
         let context = canvas.getContext("2d");
 
         context.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-        
+
         this.hostBoard.draw(context, this.hostBoard == currentBoard ? "green" : "red");
         this.opponentBoard.draw(context,  this.opponentBoard == currentBoard ? "green" : "red");
 
@@ -519,7 +522,7 @@ $(document).keypress(function (evt) {
                     }
     
                     if(game.turnsRemaining != null){
-                        if((game.hostBoard.gameFinished && game.opponentBoard.gameFinished) || game.turnsRemaining == 0){
+                        if((game.hostBoard.gameFinished && game.opponentBoard.gameFinished) || game.turnsRemaining <= 0){
                             currentBoard.gameFinished = true;
                             endGame();
                         }

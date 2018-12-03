@@ -4,10 +4,10 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
   
-  has_many :user_relationships, :class_name => 'Relationship', :foreign_key => 'user'
-  has_many :friend_relationships, :class_name => 'Relationship', :foreign_key => 'friend'
-  has_many :hosted_games, :class_name => 'Participant', :foreign_key => 'owner' 
-  has_many :joined_games, :class_name => 'Participant', :foreign_key => 'opponent'
+  has_many :user_relationships, :class_name => 'Relationship', :foreign_key => 'user', :dependent => :delete_all 
+  has_many :friend_relationships, :class_name => 'Relationship', :foreign_key => 'friend', :dependent => :delete_all 
+  has_many :hosted_games, :class_name => 'Participant', :foreign_key => 'owner', :dependent => :delete_all 
+  has_many :joined_games, :class_name => 'Participant', :foreign_key => 'opponent', :dependent => :delete_all 
   
   def to_s
     email

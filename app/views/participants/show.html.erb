@@ -1,7 +1,5 @@
 <%= javascript_include_tag params[:controller] %>
 
-<p id="notice"><%= notice %></p>
-
 <h2><%= @game %></h2>
 
 <h3 id="names_title">Host : <%= @participant.owner.name %>, Opponent : <%= @participant.opponent != nil ? @participant.opponent.name : "" %></h3>
