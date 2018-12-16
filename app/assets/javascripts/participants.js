@@ -623,7 +623,7 @@ function login() {
 
             setTimeout(function() { login() }, 1000)
         } else {
-            if(json.game_data == ""){
+            if(!json.game_data){
                 game = new Game(json.owner_id, json.opponent_id, canvas.offsetWidth, canvas.offsetHeight);
 
                 currentBoard = game.hostBoard;
